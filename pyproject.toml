@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "yamlett"
+version = "0.1.0"
+description = "Yet Another ML Experiment Tracking Tool"
+authors = ["Virgile Landeiro <virgile.landeiro@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
