@@ -132,88 +132,52 @@ with experiment() as E:
 #+begin_src jupyter-python :results raw output
 from yamlett.tracking import Run
 import numpy as np
+from sklearn.datasets import load_boston
+from sklearn.model_selection import GridSearchCV, RepeatedKFold
+from sklearn.linear_model import LinearRegression, Ridge
 
-with Run() as r:
-    run_id = r.id
-    r.store("f1_score", 0.97)
+X, y = load_boston(return_X_y=True)
+param_grid = {
+    "fit_intercept": [True, False],
+    "normalize": [True, False],
+    "alpha": np.linspace(0, 1, 5),
+}
+grid_search = GridSearchCV(
+    estimator=Ridge(),
+    param_grid=param_grid,
+    cv=RepeatedKFold(random_state=0),
+    scoring="neg_mean_squared_error",
+    refit=True,
+    n_jobs=4,
+)
 
-with Run(run_id, resume=True) as r:
-    print(r.id)
+model = grid_search.fit(X, y)
+#+end_src
 
-    for i in np.linspace(0, 1, 50):
-        r.store("metrics.f1", i, append=True)
-        r.store("metrics.precision", 1 - i, append=True)
+#+RESULTS:
 
+#+begin_src jupyter-python
+with Run(port=27018) as r:
     config = dict(
         dataset=dict(
-            name="breast_cancer",
-            version="1.0",
+            name="boston",
+            path="https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_boston.html#sklearn.datasets.load_boston",
         ),
         model=dict(
-            kind="logistic regression",
-            parameters=dict(regularization=0.01, fit_intercept=False),
+            type=model.best_estimator_.__class__.__name__,
+            parameters=model.best_estimator_.get_params(),
         ),
     )
     r.store("config", config)
+    r.store("metrics.mse.mean", model.cv_results_["mean_test_score"].mean())
+    r.store("metrics.mse.stddev", model.cv_results_["mean_test_score"].std())
+    # r.store("best_model", model.best_estimator_, pickle=True)
+
+print(r.id)
 #+end_src
 
 #+RESULTS:
-: 8c675bd7458f436fb9b4e8205d9dfef0
-
-#+begin_src jupyter-python
-import IPython
-from tabulate import tabulate
-
-class OrgFormatter(IPython.core.formatters.BaseFormatter):
-    def __call__(self, obj):
-        try:
-            return tabulate(obj, headers='keys',
-                            tablefmt='orgtbl', showindex='always')
-        except:
-            return None
-
-ip = get_ipython()
-ip.display_formatter.formatters['text/org'] = OrgFormatter()
-#+end_src
-
-#+RESULTS:
-
-#+begin_src jupyter-python
-from yamlett.tracking import Experiment
-import pandas as pd
-
-e = Experiment()
-
-pd.DataFrame(e.aggregate([
-    {
-        "$match": {
-            "created_at": {"$exists": True},
-            "finished_at": {"$exists": True}},
-        },
-    {
-        "$project": {
-            "id": 1,
-            "created_at": 1,
-            "finished_at": 1,
-            "f1": {"$arrayElemAt": ["$metrics.f1", 10]}
-        }
-    }
-]))
-#+end_src
-
-#+RESULTS:
-|    | _id                              | id                               | created_at                 | finished_at                |         f1 |
-|----+----------------------------------+----------------------------------+----------------------------+----------------------------+------------|
-|  0 | efc0301ff5e24cd692444401daa186b7 | efc0301ff5e24cd692444401daa186b7 | 2020-11-26 10:16:24.404000 | 2020-11-26 10:16:24.685000 |   0.204082 |
-|  1 | 0174ee42dac6486a8ae98492207aee46 | 0174ee42dac6486a8ae98492207aee46 | 2020-11-26 10:21:10.513000 | 2020-11-26 10:21:10.786000 |   0.204082 |
-|  2 | ff871b28836d4465b80676c65fbe71ae | ff871b28836d4465b80676c65fbe71ae | 2020-11-26 10:23:38.791000 | 2020-11-26 10:23:39.064000 |   0.204082 |
-|  3 | 37dd179021744801a7a44de746948134 | 37dd179021744801a7a44de746948134 | 2020-11-26 12:06:24.423000 | 2020-11-26 12:06:24.437000 | nan        |
-|  4 | 0ada0d1c26e6482694e18faa0b0193a9 | 0ada0d1c26e6482694e18faa0b0193a9 | 2020-11-26 12:06:49.646000 | 2020-11-26 12:06:51.315000 |   0.204082 |
-|  5 | 19b0acc3d34241b182b1bb008ab1884d | 19b0acc3d34241b182b1bb008ab1884d | 2020-11-26 13:13:54.836000 | 2020-11-26 13:13:56.315000 |   0.204082 |
-|  6 | e3c90e31dea5440496668c4e536455dc | e3c90e31dea5440496668c4e536455dc | 2020-11-26 13:15:22.769000 | 2020-11-26 13:15:24.043000 |   0.204082 |
-|  7 | 390267c29e7442bebc98bea6d30cc8ff | 390267c29e7442bebc98bea6d30cc8ff | 2020-11-26 13:24:30.990000 | 2020-11-26 13:24:32.219000 |   0.204082 |
-|  8 | 8c675bd7458f436fb9b4e8205d9dfef0 | 8c675bd7458f436fb9b4e8205d9dfef0 | 2020-11-26 13:25:01.030000 | 2020-11-26 13:25:02.227000 |   0.204082 |
-
+: 798dfee32cc2410cb3b108d107c845c6
 * Local Variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda ()(org-babel-tangle)) nil t)
