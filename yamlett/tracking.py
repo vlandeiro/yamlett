@@ -1,9 +1,11 @@
 from datetime import datetime
 from uuid import uuid4
 from typing import Any, Optional, Union, Dict
+import cloudpickle as pkl
 
 from fastcore.meta import delegates
 from pymongo.mongo_client import MongoClient
+from bson.binary import Binary
 from loguru import logger
 
 
@@ -61,7 +63,7 @@ class Run:
             #
             # NOTE: this will fail if the identifier already exists in the
             # database and this is the expected behavior
-            doc = {"_id": self.id, "id": self.id, "created_at": datetime.now()}
+            doc = {"_id": self.id, "created_at": datetime.now()}
             self.experiment.insert_one(doc)
 
     def stop(self):
@@ -70,16 +72,25 @@ class Run:
         update = {"$set": {"finished_at": datetime.now()}}
         self.experiment.update_one(filter, update)
 
-    def store(self, key: str, value: Union[Any, Dict[str, Any]], append=False):
+    def store(
+        self,
+        key: str,
+        value: Union[Any, Dict[str, Any]],
+        push: bool = False,
+        pickle: bool = False,
+    ):
         if hasattr(value, "to_dict"):
             cls = value.__class__.__name__
             logger.debug(f"Calling 'to_dict' on an object of type '{cls}'.")
             value = value.to_dict()
+        if pickle:
+            value = Binary(pkl.dumps(value))
 
         filter = {"_id": self.id}
-        op = "$push" if append else "$set"
-        update = {op: {key: value}, "$set": {"last_modified_at": datetime.now()}}
+        op = "$push" if push else "$set"
+        update = {op: {key: value}}
         update_result = self.experiment.update_one(filter, update)
-
         if update_result.modified_count == 0:
             raise ValueError("Recording this key/value pair failed.")
+        last_modified = {"$set": {"last_modified_at": datetime.now()}}
+        self.experiment.update_one(filter, last_modified)
