@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+    mongodb:
+        image: mongo:latest
+        ports:
+            - "27018:27017"
+        volumes:
+            - mongo_volume:/data/db
+    metabase:
+        image: "metabase/metabase"
+        ports:
+            - "3000:3000"
+        volumes:
+            - metabase_volume:/metabase-data
+        environment:
+            - "MB_DB_FILE=/metabase-data/metabase.db"
+        links:
+            - "mongodb"
+volumes:
+    mongo_volume:
+    metabase_volume:
