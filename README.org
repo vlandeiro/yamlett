@@ -34,7 +34,6 @@ model = ...
 X, y = ...
 
 with run:
-
     # store your parameters
     run.store("params_model_type", "Logistic Regression")
     run.store("params_model_pypath", "sklearn.linear_model.LogisticRegression")
@@ -77,11 +76,11 @@ However, one downside of this approach is that you need to maintain your own
 namespace convention. For example here, we used underscores to separate the
 different levels of information (params, data, metrics, etc) but this can
 quickly get confusing: is it =params/model/fit_intercept= or
-=params/model_fit/intercept= ? It's also a bit more work than expected when
-some information comes in a dictionary as it requires unpacking it and doing
-some string formatting (e.g. =model.get_params()=). Additionally, it can be hard
-to find the value you are interested in once you have a large number of
-parameters and metrics.
+=params/model_fit/intercept= ? It's also a bit more work than expected when some
+information comes in a dictionary as it requires unpacking it and doing some
+string formatting (e.g. =model.get_params()=). Additionally, it can be hard to
+find the value you are interested in once you have a large number of parameters
+and metrics.
 
 The method we propose in this package is to leverage Python dictionaries /
 MongoDB documents to automatically store your information in a organized manner.
@@ -99,12 +98,11 @@ model = ...
 X, y = ...
 
 with run:
-
     # store your parameters
     model_params = {
         "type": "Logistic Regression",
         "pypath": "sklearn.linear_model.LogisticRegression",
-        ,**model.get_params(),
+        **model.get_params(),
     }
     run.store(f"params.model", model_params)
 
