@@ -146,7 +146,7 @@ Once again, let's call =run.data= and see what information we stored:
 #+end_src
 
 The run information is now stored in a document that can be easily parsed based
-on its organization. Additionally, because Yamlett is built on top of MongoDB,
+on its organization. Additionally, because =yamlett= is built on top of MongoDB,
 you can query runs in an =Experiment= using =find= or =aggregate=. For instance,
 we could retrieve all runs in the default experiment for which:
 1. the model was fit with bias term
