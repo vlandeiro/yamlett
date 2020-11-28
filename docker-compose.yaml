@@ -1,21 +1,32 @@
 version: "3.8"
 services:
-    mongodb:
-        image: mongo:latest
-        ports:
-            - "27018:27017"
-        volumes:
-            - mongo_volume:/data/db
-    metabase:
-        image: "metabase/metabase"
-        ports:
-            - "3000:3000"
-        volumes:
-            - metabase_volume:/metabase-data
-        environment:
-            - "MB_DB_FILE=/metabase-data/metabase.db"
-        links:
-            - "mongodb"
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_volume:/data/db
+  metabase:
+    image: "metabase/metabase"
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_volume:/metabase-data
+    environment:
+      - "MB_DB_FILE=/metabase-data/metabase.db"
+    links:
+      - "mongodb"
+      - "presto"
+  presto:
+    image: "prestosql/presto"
+    ports:
+      - "8080:8080"
+    links:
+      - "mongodb"
+    depends_on:
+      - "mongodb"
+    volumes:
+      - ./config/catalog/:/usr/lib/presto/default/etc/catalog/
 volumes:
-    mongo_volume:
-    metabase_volume:
+  mongo_volume:
+  metabase_volume:

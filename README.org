@@ -169,15 +169,23 @@ with Run(port=27018) as r:
         ),
     )
     r.store("config", config)
-    r.store("metrics.mse.mean", model.cv_results_["mean_test_score"].mean())
-    r.store("metrics.mse.stddev", model.cv_results_["mean_test_score"].std())
+    metrics = [
+        {
+            "name": "mse",
+            "mean": model.cv_results_["mean_test_score"].mean(),
+            "stddev": model.cv_results_["mean_test_score"].std(),
+        },
+        {"name": "accuracy", "mean": np.random.rand(), "stddev": np.random.rand() / 20},
+        {"name": "f1_score", "mean": np.random.rand(), "stddev": np.random.rand() / 20},
+    ]
+    r.store("metrics", metrics)
     # r.store("best_model", model.best_estimator_, pickle=True)
 
 print(r.id)
 #+end_src
 
 #+RESULTS:
-: 798dfee32cc2410cb3b108d107c845c6
+: b53988648ba249bdb113ea177d9304ad
 * Local Variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda ()(org-babel-tangle)) nil t)
