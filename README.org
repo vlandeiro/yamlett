@@ -17,11 +17,10 @@ It has a simple interface with only two primitives: =Experiment= and =Run=.
   model parameters, metrics, or pickled artifacts.
 
 The main difference with other tracking tools (e.g. MLflow) is that you can save
-complex information using dictionaries or lists and filter on them later thanks
-to MongoDB being a document-oriented database. This is helpful to save the
-information you store using whatever organization you prefer. For instance, you
-could store your information using a flat approach similar to MLflow (key/value
-pairs):
+complex information using dictionaries or lists and filter on them later using
+MongoDB queries. This is helpful to save the information about a run using
+whatever organization you prefer. For instance, you could store your information
+using a flat approach similar to MLflow (key/value pairs):
 #+begin_src python :eval no
 from yamlett import Run
 
