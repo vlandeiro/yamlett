@@ -5,6 +5,7 @@ import cloudpickle as pkl
 
 from fastcore.meta import delegates
 from pymongo.mongo_client import MongoClient
+from pymongo.errors import DuplicateKeyError
 from bson.binary import Binary
 from loguru import logger
 
@@ -36,14 +37,12 @@ class Run:
         self,
         id: Optional[str] = None,
         experiment_name: str = "runs",
-        resume: bool = False,
         **kwargs,
     ):
         self.id = id
         if self.id is None:
             self.id = uuid4().hex
         self.experiment_name = experiment_name
-        self.resume = resume
         self.mongo_kwargs = kwargs
 
     def __enter__(self):
@@ -58,13 +57,17 @@ class Run:
         return Experiment(name=self.experiment_name, **self.mongo_kwargs)
 
     def start(self):
-        if not self.resume:
-            # insert a new document storing the run id and the creation time
-            #
-            # NOTE: this will fail if the identifier already exists in the
-            # database and this is the expected behavior
+        # insert a new document storing the run id and the creation time
+        #
+        # NOTE: this will fail with a DuplicateKeyError if the identifier
+        # already exists in the database. At this point, we assume the user
+        # wants to resume the run rather than start a new one.
+        try:
             doc = {"_id": self.id, "created_at": datetime.now()}
             self.experiment.insert_one(doc)
+        except DuplicateKeyError:
+            logger.debug(f"Resuming run {self.id}.")
+            pass
 
     def stop(self):
         # record the final time

@@ -130,18 +130,35 @@ with experiment() as E:
 #+RESULTS:
 
 #+begin_src jupyter-python :results raw output
-from yamlett.tracking import Run
 import numpy as np
 from sklearn.datasets import load_boston
 from sklearn.model_selection import GridSearchCV, RepeatedKFold
 from sklearn.linear_model import LinearRegression, Ridge
 
+from yamlett.tracking import Run
+
+run = Run(port=27018)
+
 X, y = load_boston(return_X_y=True)
+with run:
+    run.store(
+        "config.dataset",
+        {
+            "name": "boston",
+            "function": "sklearn.datasets.boston",
+            "n_observations": X.shape[0],
+            "n_features": X.shape[1],
+        },
+    )
+
 param_grid = {
     "fit_intercept": [True, False],
     "normalize": [True, False],
-    "alpha": np.linspace(0, 1, 5),
+    "alpha": np.linspace(0, 1, 5).tolist(),
 }
+with run:
+    run.store("config.param_grid", param_grid)
+
 grid_search = GridSearchCV(
     estimator=Ridge(),
     param_grid=param_grid,
@@ -152,40 +169,29 @@ grid_search = GridSearchCV(
 )
 
 model = grid_search.fit(X, y)
-#+end_src
 
-#+RESULTS:
-
-#+begin_src jupyter-python
-with Run(port=27018) as r:
-    config = dict(
-        dataset=dict(
-            name="boston",
-            path="https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_boston.html#sklearn.datasets.load_boston",
-        ),
-        model=dict(
-            type=model.best_estimator_.__class__.__name__,
-            parameters=model.best_estimator_.get_params(),
-        ),
-    )
-    r.store("config", config)
-    metrics = [
+with run:
+    run.store(
+        "results.best_model",
         {
-            "name": "mse",
+            "params": model.best_estimator_.get_params(),
+            "class": model.best_estimator_.__class__.__name__,
+        },
+    )
+    run.store("results.best_model.pickle", model.best_estimator_, pickle=True)
+    run.store(
+        "results.metrics",
+        {
             "mean": model.cv_results_["mean_test_score"].mean(),
             "stddev": model.cv_results_["mean_test_score"].std(),
         },
-        {"name": "accuracy", "mean": np.random.rand(), "stddev": np.random.rand() / 20},
-        {"name": "f1_score", "mean": np.random.rand(), "stddev": np.random.rand() / 20},
-    ]
-    r.store("metrics", metrics)
-    # r.store("best_model", model.best_estimator_, pickle=True)
-
-print(r.id)
+    )
 #+end_src
 
 #+RESULTS:
-: b53988648ba249bdb113ea177d9304ad
+: 2020-11-28 10:56:17.837 | DEBUG    | yamlett.tracking:start:69 - Resuming run 573c542db22b464595d2520f67261e47.
+: 2020-11-28 10:56:18.409 | DEBUG    | yamlett.tracking:start:69 - Resuming run 573c542db22b464595d2520f67261e47.
+
 * Local Variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda ()(org-babel-tangle)) nil t)
