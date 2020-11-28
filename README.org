@@ -76,8 +76,8 @@ This approach is straightforward: one scalar for each key in the document.
 However, one downside of this approach is that you need to maintain your own
 namespace convention. For example here, we used underscores to separate the
 different levels of information (params, data, metrics, etc) but this can
-quickly get confusing: is it ="params/model/fit_intercept"= or
-="params/model_fit/intercept"= ? It's also a bit more work than expected when
+quickly get confusing: is it =params/model/fit_intercept= or
+=params/model_fit/intercept= ? It's also a bit more work than expected when
 some information comes in a dictionary as it requires unpacking it and doing
 some string formatting (e.g. =model.get_params()=). Additionally, it can be hard
 to find the value you are interested in once you have a large number of
