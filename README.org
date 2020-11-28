@@ -3,8 +3,7 @@
 :header-args:jupyter-python: :session yamlett :results value raw :async yes
 :END:
 
-=yamlett= provides a simple but flexible way to organize and track your ML
-experiments.
+=yamlett= provides a simple but flexible way to track your ML experiments.
 
 It has a simple interface with only two primitives: =Experiment= and =Run=.
 
