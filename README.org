@@ -167,6 +167,12 @@ e.find(
 )
 #+end_src
 
+Note that =yamlett= does not enforced the document hierarchy so you are free to
+organize your data as you see fit. Finally, =yamlett= is especially useful if
+your experiments are configuration driven as you are then able to simply read
+your configuration file and save it along your other results using
+=run.store("config", config")=.
+
 * Roadmap
 
 ** TODO Automatically load pickled objects
@@ -175,8 +181,13 @@ e.find(
 ** TODO Add CI/CD
 ** TODO Release 0.1.0 to github
 ** TODO Release to pypi
-** TODO Add e2e example
-** TODO Add example for connecting to Metabase / Presto
+** TODO Add e2e runnable example
+** TODO Add example for connecting to Metabase and Presto
+- metabase allows connecting to an instance of mongodb and query data
+- sql is more common so we can plug presto on top of mongodb and link metabase
+  to presto
+- caveat that the schema cannot change when using Presto: ie no new fields in
+  the runs
 
 * Local Variables
 # Local Variables:
