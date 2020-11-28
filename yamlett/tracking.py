@@ -7,6 +7,7 @@ from fastcore.meta import delegates
 from pymongo.mongo_client import MongoClient
 from pymongo.errors import DuplicateKeyError
 from bson.binary import Binary
+from bson.objectid import ObjectId
 from loguru import logger
 
 
@@ -55,6 +56,10 @@ class Run:
     @property
     def experiment(self):
         return Experiment(name=self.experiment_name, **self.mongo_kwargs)
+
+    @property
+    def data(self):
+        return self.experiment.find_one({"_id": self.id})
 
     def start(self):
         # insert a new document storing the run id and the creation time
