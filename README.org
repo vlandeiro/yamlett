@@ -3,194 +3,180 @@
 :header-args:jupyter-python: :session yamlett :results value raw :async yes
 :END:
 
-=yamlett= provides you with a simple but flexible way to organize and track your
-ML experiments.
-** MongoDB PoC
-#+begin_src jupyter-python
-import pymongo
-m = pymongo.MongoClient()
-#+end_src
+=yamlett= provides a simple but flexible way to organize and track your ML
+experiments.
 
-#+RESULTS:
+It has a simple interface with only two primitives: =Experiment= and =Run=.
 
-#+begin_src jupyter-python
-m.list_database_names()
-#+end_src
+- An =Experiment= is a named collection of =Run= objects. It is a wrapper around
+  a =pymongo.collection.Collection= object ([[https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection][reference]]), meaning that you can
+  query it using =find= or =aggregate=. Think of it as a way to collect all the
+  modeling iterations of a specific project.
+- A =Run= is used to store information about one iteration of your =Experiment=.
+  You can use it to record any ([[http://bsonspec.org][BSON]]-serializable) information you want such as
+  model parameters, metrics, or pickled artifacts.
 
-#+RESULTS:
-| admin | config | local | turf | yamlett |
+The main difference with other tracking tools (e.g. MLflow) is that you can save
+complex information using dictionaries or lists and filter on them later thanks
+to MongoDB being a document-oriented database. This is helpful to save the
+information you store using whatever organization you prefer. For instance, you
+could store your information using a flat approach similar to MLflow (key/value
+pairs):
+#+begin_src python :eval no
+from yamlett import Run
 
-#+begin_src jupyter-python
-from uuid import uuid4
-run_id = uuid4().hex
-run_id
-#+end_src
+run = Run()
 
-#+RESULTS:
-: f0380d099f4242f68b59de84cfc0ec7d
+# build your model
+model = ...
 
-#+begin_src jupyter-python
-r = m.yamlett.runs.update_one({"_id": run_id}, {"$set": {"la": 1}})
-r
-#+end_src
+# load your data
+X, y = ...
 
-#+RESULTS:
-: <pymongo.results.UpdateResult at 0x7f9b6aa70870>
-
-#+begin_src jupyter-python
-r.modified_count
-#+end_src
-
-#+RESULTS:
-: 0
-
-#+begin_src jupyter-python
-m.yamlett.runs.insert_one({"_id": run_id})
-#+end_src
-
-#+RESULTS:
-: <pymongo.results.InsertOneResult at 0x7fe474f9cd70>
-
-#+begin_src jupyter-python
-# log("f1_score", 0.97)
-m.yamlett.runs.update_one({"_id": run_id}, {"$set":  {"f1_score": 0.97}})
-#+end_src
-
-#+RESULTS:
-: <pymongo.results.UpdateResult at 0x7fe47479f6e0>
-
-#+begin_src jupyter-python
-# log("metrics", {"f1_score": 0.95, "precision_score": .94})
-m.yamlett.runs.update_one({"_id": run_id}, {"$set":  {"metrics": {"f1_score": 0.95, "precision_score": 0.94}}})
-#+end_src
-
-#+RESULTS:
-: <pymongo.results.UpdateResult at 0x7fe474f9c820>
-
-#+begin_src jupyter-python
-# log("metrics.f1_score", 0.98)
-m.yamlett.runs.update_one({"_id": run_id}, {"$set": {"metrics.f1_score": 0.98}})
-#+end_src
-
-#+RESULTS:
-: <pymongo.results.UpdateResult at 0x7fe475bf8a00>
-
-#+begin_src jupyter-python
-config = dict(
-    dataset=dict(
-        name="breast_cancer",
-        version="1.0",
-    ),
-    model=dict(
-        kind="logistic regression",
-        parameters=dict(
-            regularization=0.01,
-            fit_intercept=False
-        )
-    )
-)
-
-# log("config", config)
-m.yamlett.runs.update_one({"_id": run_id}, {"$set": {"config": config}})
-#+end_src
-
-#+RESULTS:
-: <pymongo.results.UpdateResult at 0x7fe47478a3c0>
-
-#+begin_src jupyter-python
-m.close()
-#+end_src
-
-** API UI
-#+begin_src jupyter-python :eval no
-from yamlett import experiment
-
-with experiment() as E:
-    dataset = "breast_cancer"
-    s3_folder = "s3://virgile/breast_cancer"
-    X = pd.read_parquet(f"{s3_folder}/features.parquet")
-    y = pd.read_parquet(f"{s3_folder}/labels.parquet")
-    
-    E.record("dataset", {
-        "name": dataset,
-        "path": s3_folder,
-        "n_observations": X.shape[0],
-        "n_features": X.shape[1],
-        "class_distribution": y.value_counts().to_dict()
-    })
-#+end_src
-
-
-** Example
-#+begin_src jupyter-python
-%load_ext autoreload
-%autoreload 2
-#+end_src
-
-#+RESULTS:
-
-#+begin_src jupyter-python :results raw output
-import numpy as np
-from sklearn.datasets import load_boston
-from sklearn.model_selection import GridSearchCV, RepeatedKFold
-from sklearn.linear_model import LinearRegression, Ridge
-
-from yamlett.tracking import Run
-
-run = Run(port=27018)
-
-X, y = load_boston(return_X_y=True)
 with run:
-    run.store(
-        "config.dataset",
-        {
-            "name": "boston",
-            "function": "sklearn.datasets.boston",
-            "n_observations": X.shape[0],
-            "n_features": X.shape[1],
-        },
-    )
 
-param_grid = {
-    "fit_intercept": [True, False],
-    "normalize": [True, False],
-    "alpha": np.linspace(0, 1, 5).tolist(),
+    # store your parameters
+    run.store("params_model_type", "Logistic Regression")
+    run.store("params_model_pypath", "sklearn.linear_model.LogisticRegression")
+    for param_name, param_value in model.get_params():
+        run.store(f"params_model_{param_name}", param_value)
+
+    # store information about your data
+    run.store("data_n_features", X.shape[0])
+    run.store("data_n_observations", X.shape[1])
+
+# train your model
+model.fit(X, y)
+
+with run:
+    # store your results and metrics
+    run.store("metrics_f1_score", 0.92)
+
+    # store your artifacts
+    run.store("model", model, pickle=True)
+
+#+end_src
+
+After running this code, we can retrieve the stored information by calling
+=run.data=:
+#+begin_src python :eval no
+{
+    "params_model_type": "Logistic Regression",
+    "params_model_pypath": "sklearn.linear_model.LogisticRegression",
+    "params_model_C": 0.01,
+    "params_model_fit_intercept": True,
+    "data_n_features": 91,
+    "data_n_observations": 3500,
+    "metrics_f1_score": 0.92,
+    "model": model
 }
-with run:
-    run.store("config.param_grid", param_grid)
-
-grid_search = GridSearchCV(
-    estimator=Ridge(),
-    param_grid=param_grid,
-    cv=RepeatedKFold(random_state=0),
-    scoring="neg_mean_squared_error",
-    refit=True,
-    n_jobs=4,
-)
-
-model = grid_search.fit(X, y)
-
-with run:
-    run.store(
-        "results.best_model",
-        {
-            "params": model.best_estimator_.get_params(),
-            "class": model.best_estimator_.__class__.__name__,
-        },
-    )
-    run.store("results.best_model.pickle", model.best_estimator_, pickle=True)
-    run.store(
-        "results.metrics",
-        {
-            "mean": model.cv_results_["mean_test_score"].mean(),
-            "stddev": model.cv_results_["mean_test_score"].std(),
-        },
-    )
 #+end_src
 
-#+RESULTS:
-: 2020-11-28 10:56:17.837 | DEBUG    | yamlett.tracking:start:69 - Resuming run 573c542db22b464595d2520f67261e47.
-: 2020-11-28 10:56:18.409 | DEBUG    | yamlett.tracking:start:69 - Resuming run 573c542db22b464595d2520f67261e47.
+This approach is straightforward: one scalar for each key in the document.
+However, one downside of this approach is that you need to maintain your own
+namespace convention. For example here, we used underscores to separate the
+different levels of information (params, data, metrics, etc) but this can
+quickly get confusing: is it ="params/model/fit_intercept"= or
+="params/model_fit/intercept"= ? It's also a bit more work than expected when
+some information comes in a dictionary as it requires unpacking it and doing
+some string formatting (e.g. =model.get_params()=). Additionally, it can be hard
+to find the value you are interested in once you have a large number of
+parameters and metrics.
+
+The method we propose in this package is to leverage Python dictionaries /
+MongoDB documents to automatically store your information in a organized manner.
+Let's see what it looks like using a similar run as the example above:
+
+#+begin_src python :eval no
+from yamlett import Run
+
+run = Run()
+
+# build your model
+model = ...
+
+# load your data
+X, y = ...
+
+with run:
+
+    # store your parameters
+    model_params = {
+        "type": "Logistic Regression",
+        "pypath": "sklearn.linear_model.LogisticRegression",
+        ,**model.get_params(),
+    }
+    run.store(f"params.model", model_params)
+
+    # store information about your data
+    run.store("data", {"n_features": X.shape[0], "n_observations": X.shape[1]})
+
+# train your model
+model.fit(X, y)
+
+with run:
+    # store your results and metrics
+    run.store("metrics.f1_score", 0.92)
+
+    # store your artifacts
+    run.store("model", model, pickle=True)
+#+end_src
+
+Once again, let's call =run.data= and see what information we stored:
+
+#+begin_src python :eval no
+{
+    "params": {
+        "model": {
+            "type": "Logistic Regression",
+            "pypath": "sklearn.linear_model.LogisticRegression",
+            "C": 0.01,
+            "fit_intercept": True,
+        }
+    },
+    "data": {
+        "n_features": 91,
+        "n_observations": 3500,
+    },
+    "metrics": {
+        "f1_score": 0.92,
+    },
+    "model": model,
+}
+#+end_src
+
+The run information is now stored in a document that can be easily parsed based
+on its organization. Additionally, because Yamlett is built on top of MongoDB,
+you can query runs in an =Experiment= using =find= or =aggregate=. For instance,
+we could retrieve all runs in the default experiment for which:
+1. the model was fit with bias term
+2. on a dataset with at least 3000 data points
+3. that yielded an F1 score of at least 0.9
+
+#+begin_src python :eval no
+from yamlett import Experiment
+
+e = Experiment()
+
+e.find(
+    {
+        "params.model.fit_intercept": True,
+        "data.n_observations": {"$gte": 3000},
+        "metrics.f1_score": {"$gte": 0.9},
+    }
+)
+#+end_src
+
+* Roadmap
+
+** TODO Automatically load pickled objects
+** TODO Add basic unit tests
+** TODO Add tests across python version using tox
+** TODO Add CI/CD
+** TODO Release 0.1.0 to github
+** TODO Release to pypi
+** TODO Add e2e example
+** TODO Add example for connecting to Metabase / Presto
 
 * Local Variables
 # Local Variables:
