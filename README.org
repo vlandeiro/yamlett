@@ -172,7 +172,7 @@ your configuration file and save it along your other results using
 * Roadmap
 
 ** TODO Automatically load pickled objects
-** TODO Add basic unit tests
+** DONE Add basic unit tests
 ** TODO Add tests across python version using tox
 ** TODO Add CI/CD
 ** TODO Release 0.1.0 to github
@@ -185,6 +185,9 @@ your configuration file and save it along your other results using
 - caveat that the schema cannot change when using Presto: ie no new fields in
   the runs
 
+** TODO Use environment variables to define MongoDB parameters
+** TODO Enable artifacts to be stored on disk or in cloud storage
+- Let users provide an object that supports =open=, =write=, and =read=
 * Local Variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda ()(org-babel-tangle)) nil t)
