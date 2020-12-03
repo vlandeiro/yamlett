@@ -17,7 +17,7 @@ lint:
 	flake8 yamlett tests
 
 check-lint:
-	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics yamlett tests
+	flake8 yamlett tests --count --select=E9,F63,F7,F82 --show-source --statistics
 
 build:
 	poetry build
