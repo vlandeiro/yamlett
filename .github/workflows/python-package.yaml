@@ -26,11 +26,11 @@ jobs:
         poetry install
     - name: Format with black
       run: |
-        python -m black --check yamlett tests
+        poetry run make check-format
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics yamlett tests
+        poetry run make check-lint
     - name: Test with pytest
       run: |
-        python -m pytest
+        poetry run make test
