@@ -17,9 +17,9 @@ It has a simple interface with only two primitives: =Experiment= and =Run=.
 
 The main difference with other tracking tools (e.g. MLflow) is that you can save
 complex information using dictionaries or lists and filter on them later using
-MongoDB queries. This is helpful to save the information about a run using
-whatever organization you prefer. For instance, you could store your information
-using a flat approach similar to MLflow (key/value pairs):
+MongoDB queries. This is helpful to save run information using whatever
+structure you prefer. For instance, you could store your information using a
+flat approach similar to MLflow (key/value pairs):
 #+begin_src python :eval no
 from yamlett import Run
 
@@ -163,7 +163,7 @@ e.find(
 )
 #+end_src
 
-Note that =yamlett= does not enforced the document hierarchy so you are free to
+Note that =yamlett= does not enforce the document hierarchy so you are free to
 organize your data as you see fit. Finally, =yamlett= is especially useful if
 your experiments are configuration driven as you are then able to simply read
 your configuration file and save it along your other results using
@@ -173,7 +173,6 @@ your configuration file and save it along your other results using
 
 - [ ] Automatically load pickled objects
 - [X] Add basic unit tests
-- [ ] Add tests across python version using tox
 - [ ] Add CI/CD
 - [ ] Release 0.1.0 to github
 - [ ] Release to pypi
@@ -183,10 +182,12 @@ your configuration file and save it along your other results using
   + sql is more common so we can plug presto on top of mongodb and link metabase
     to presto
   + caveat that the schema cannot change when using Presto: ie no new fields in
-    the runs
+    new runs
 - [ ] Use environment variables to define MongoDB parameters
 - [ ] Enable artifacts to be stored on disk or in cloud storage
-  + Let users provide an object that supports =open=, =write=, and =read=
+  + Let users provide an object that supports =open=, =write=, and =read= and
+    interacts with the file system
+- [ ] Add tests across python version using tox
 
 * Local Variables
 # Local Variables:

@@ -69,14 +69,10 @@ class Run:
 
     def start(self):
         # insert a new document storing the run id and the creation time
-        #
-        # NOTE: this will fail with a DuplicateKeyError if the identifier
-        # already exists in the database. At this point, we assume the user
-        # wants to resume the run rather than start a new one.
         try:
             doc = {"_id": self.id, "created_at": datetime.now()}
             self.experiment.insert_one(doc)
-        except DuplicateKeyError:
+        except DuplicateKeyError:  # resume the run
             logger.debug(f"Resuming run {self.id}.")
         self._dirty = True
 
@@ -94,10 +90,6 @@ class Run:
         push: bool = False,
         pickle: bool = False,
     ):
-        if hasattr(value, "to_dict"):
-            cls = value.__class__.__name__
-            logger.debug(f"Calling 'to_dict' on an object of type '{cls}'.")
-            value = value.to_dict()
         if pickle:
             value = pkl.dumps(value)
 
@@ -106,7 +98,7 @@ class Run:
         update = {op: {key: value}}
         update_result = self.experiment.update_one(filter, update)
         if update_result.modified_count == 0:
-            raise ValueError("Recording this key/value pair failed.")
+            raise ValueError(f"Updating operation failed: {update}")
         self._dirty = True
         last_modified = {"$set": {"last_modified_at": datetime.now()}}
         self.experiment.update_one(filter, last_modified)
