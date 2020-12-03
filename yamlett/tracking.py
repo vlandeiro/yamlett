@@ -2,10 +2,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
-import cloudpickle as pkl
 import pymongo
 from fastcore.meta import delegates
-from loguru import logger
 from pymongo.errors import DuplicateKeyError
 
 
@@ -73,7 +71,7 @@ class Run:
             doc = {"_id": self.id, "created_at": datetime.now()}
             self.experiment.insert_one(doc)
         except DuplicateKeyError:  # resume the run
-            logger.debug(f"Resuming run {self.id}.")
+            pass
         self._dirty = True
 
     def stop(self):
@@ -88,11 +86,7 @@ class Run:
         key: str,
         value: Union[Any, Dict[str, Any]],
         push: bool = False,
-        pickle: bool = False,
     ):
-        if pickle:
-            value = pkl.dumps(value)
-
         filter = {"_id": self.id}
         op = "$push" if push else "$set"
         update = {op: {key: value}}

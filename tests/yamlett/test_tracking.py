@@ -1,10 +1,8 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Dict, Any
+from typing import Any, Dict
 
-import cloudpickle
-import pymongo
 import mongomock
+import pymongo
+import pytest
 
 from yamlett.tracking import Experiment, Run
 from yamlett.utils_test import nullcontext
@@ -91,6 +89,14 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
             assert "other" in run.data.keys()
             assert run.data["other"] == [1]
 
+            # stop the run
+            run.stop()
+            assert run._dirty
+
+            # resume the run
+            run.start()
+            assert run._dirty
+
             # add another value to the same list
             run.store("other", 2, push=True)
             assert run._dirty
@@ -101,40 +107,6 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
             assert run.data["value"] == 1234
             assert "other" in run.data.keys()
             assert run.data["other"] == [1, 2]
-
-            # add a pickled value
-            run.store("other_pickled", 3, pickle=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2]
-            assert "other_pickled" in run.data.keys()
-            assert run.data["other_pickled"] == cloudpickle.dumps(3)
-
-            # stop the run
-            run.stop()
-            assert run._dirty
-
-            # resume the run
-            run.start()
-            assert run._dirty
-
-            # append a pickled value
-            run.store("other", 3, push=True, pickle=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2, cloudpickle.dumps(3)]
-            assert "other_pickled" in run.data.keys()
-            assert run.data["other_pickled"] == cloudpickle.dumps(3)
 
             # stop the run
             run.stop()
@@ -187,6 +159,14 @@ def test_run_context_manager(experiment_name, kwargs, patch, context):
             assert "other" in run.data.keys()
             assert run.data["other"] == [1]
 
+            # stop the run
+            run.stop()
+            assert run._dirty
+
+            # resume the run
+            run.start()
+            assert run._dirty
+
             # add another value to the same list
             run.store("other", 2, push=True)
             assert run._dirty
@@ -197,40 +177,6 @@ def test_run_context_manager(experiment_name, kwargs, patch, context):
             assert run.data["value"] == 1234
             assert "other" in run.data.keys()
             assert run.data["other"] == [1, 2]
-
-            # add a pickled value
-            run.store("other_pickled", 3, pickle=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2]
-            assert "other_pickled" in run.data.keys()
-            assert run.data["other_pickled"] == cloudpickle.dumps(3)
-
-            # stop the run
-            run.stop()
-            assert run._dirty
-
-            # resume the run
-            run.start()
-            assert run._dirty
-
-            # append a pickled value
-            run.store("other", 3, push=True, pickle=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2, cloudpickle.dumps(3)]
-            assert "other_pickled" in run.data.keys()
-            assert run.data["other_pickled"] == cloudpickle.dumps(3)
 
             # validate the run one more time but make sure we have the
             # information about finishing time
