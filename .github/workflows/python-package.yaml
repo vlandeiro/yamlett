@@ -23,7 +23,7 @@ jobs:
         poetry-version: ${{ matrix.poetry-version }}
     - name: Install dependencies
       run: |
-        poetry install .
+        poetry install
     - name: Format with black
       run: |
         make format
