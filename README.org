@@ -21,6 +21,8 @@ MongoDB queries. This is helpful to save run information using whatever
 structure you prefer. For instance, you could store your information using a
 flat approach similar to MLflow (key/value pairs):
 #+begin_src python :eval no
+import cloudpickle as pickle
+
 from yamlett import Run
 
 run = Run()
@@ -50,7 +52,7 @@ with run:
     run.store("metrics_f1_score", 0.92)
 
     # store your artifacts
-    run.store("model", model, pickle=True)
+    run.store("model", pickle.dumps(model))
 
 #+end_src
 
@@ -85,6 +87,8 @@ MongoDB documents to automatically store your information in a organized manner.
 Let's see what it looks like using a similar run as the example above:
 
 #+begin_src python :eval no
+import cloudpickle as pickle
+
 from yamlett import Run
 
 run = Run()
@@ -100,7 +104,7 @@ with run:
     model_params = {
         "type": "Logistic Regression",
         "pypath": "sklearn.linear_model.LogisticRegression",
-        **model.get_params(),
+        ,**model.get_params(),
     }
     run.store(f"params.model", model_params)
 
@@ -115,7 +119,7 @@ with run:
     run.store("metrics.f1_score", 0.92)
 
     # store your artifacts
-    run.store("model", model, pickle=True)
+    run.store("model", pickle.dumps(model))
 #+end_src
 
 Once again, let's call =run.data= and see what information we stored:
@@ -169,10 +173,11 @@ your experiments are configuration driven as you are then able to simply read
 your configuration file and save it along your other results using
 =run.store("config", config")=.
 
-* Roadmap [1/10]
+* Roadmap [2/9]
 
-- [ ] Automatically load pickled objects
 - [X] Add basic unit tests
+- [X] Add tests across python version using tox
+  + tox replaced by Github Actions
 - [ ] Add CI/CD
 - [ ] Release 0.1.0 to github
 - [ ] Release to pypi
@@ -187,7 +192,6 @@ your configuration file and save it along your other results using
 - [ ] Enable artifacts to be stored on disk or in cloud storage
   + Let users provide an object that supports =open=, =write=, and =read= and
     interacts with the file system
-- [ ] Add tests across python version using tox
 
 * Local Variables
 # Local Variables:
