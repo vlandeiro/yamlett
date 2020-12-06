@@ -7,6 +7,9 @@
 #+TOC: headlines 2 local
 
 ** What is =yamlett=?
+:PROPERTIES:
+:CUSTOM_ID: what-is-yamlett
+:END:
 
 =yamlett= provides a simple but flexible way to track your ML experiments.
 
@@ -31,10 +34,18 @@ can easily save it along with other information using =run.store("config",
 config")=.
 
 ** Example
+:PROPERTIES:
+:CUSTOM_ID: example
+:END:
+
 As a simple example, let's compare a simple model run using a tracking approach
 similar to MLflow and the preferred tracking approach with =yamlett=.
 
 *** Set up the experiment
+:PROPERTIES:
+:CUSTOM_ID: set-up-experiment
+:END:
+
 Let's first load a dataset for a simple classification problem that ships with
 scikit-learn.
 
@@ -61,6 +72,10 @@ model.fit(X, y)
 : LogisticRegression(C=0.1, max_iter=200)
 
 *** MLflow-like tracking
+:PROPERTIES:
+:CUSTOM_ID: mlflow-like-tracking
+:END:
+
 With =yamlett=, you are free to organize you tracking information so you could
 decide to store it using a "flat" approach similar to MLflow where each key has
 an associated value and there is no nesting involved.
@@ -133,6 +148,9 @@ or =params/model_fit/intercept= ? It's also more work than needed when
 information already comes nicely organized (e.g. =model.get_params()=).
 
 *** =yamlett=-like tracking
+:PROPERTIES:
+:CUSTOM_ID: yamlett-like-tracking
+:END:
 
 The method we propose in this package is to leverage Python dictionaries / NoSQL
 DB documents to automatically store your information in a structured way. Let's
@@ -225,7 +243,7 @@ e = Experiment()
 
 e.find(
     {
-        "params.model.fit_intercept": True,
+        "model.params.fit_intercept": True,
         "data.n_observations": {"$gte": 3000},
         "metrics.f1_score": {"$gte": 0.9},
     }

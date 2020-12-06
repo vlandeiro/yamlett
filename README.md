@@ -1,13 +1,13 @@
 # yamlett - Yet Another Machine Learning Experiment Tracking Tool
 
-1.  [What is `yamlett`?](#orgcb0feb4)
-2.  [Example](#org916d1f9)
-    1.  [Set up the experiment](#org99dd96d)
-    2.  [MLflow-like tracking](#org9eaef39)
-    3.  [`yamlett`-like tracking](#org2b09022)
+1.  [What is `yamlett`?](#what-is-yamlett)
+2.  [Example](#example)
+    1.  [Set up the experiment](#set-up-experiment)
+    2.  [MLflow-like tracking](#mlflow-like-tracking)
+    3.  [`yamlett`-like tracking](#yamlett-like-tracking)
 
 
-<a id="orgcb0feb4"></a>
+<a id="what-is-yamlett"></a>
 
 ## What is `yamlett`?
 
@@ -23,14 +23,14 @@ The main difference with other tracking tools (e.g. MLflow) is that you can save
 Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config")`.
 
 
-<a id="org916d1f9"></a>
+<a id="example"></a>
 
 ## Example
 
 As a simple example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
 
 
-<a id="org99dd96d"></a>
+<a id="set-up-experiment"></a>
 
 ### Set up the experiment
 
@@ -52,7 +52,7 @@ model.fit(X, y)
 ```
 
 
-<a id="org9eaef39"></a>
+<a id="mlflow-like-tracking"></a>
 
 ### MLflow-like tracking
 
@@ -108,7 +108,7 @@ After running this code, we can retrieve the stored information by calling `run.
 This approach is straightforward: one scalar for each key in the document. However, one downside of this approach is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept` ? It&rsquo;s also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
 
 
-<a id="org2b09022"></a>
+<a id="yamlett-like-tracking"></a>
 
 ### `yamlett`-like tracking
 
@@ -178,7 +178,7 @@ e = Experiment()
 
 e.find(
     {
-        "params.model.fit_intercept": True,
+        "model.params.fit_intercept": True,
         "data.n_observations": {"$gte": 3000},
         "metrics.f1_score": {"$gte": 0.9},
     }
