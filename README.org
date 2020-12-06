@@ -1,17 +1,21 @@
-#+OPTIONS: ^:nil author:nil -:nil
+#+OPTIONS: ^:nil author:nil toc:nil
 * yamlett - Yet Another Machine Learning Experiment Tracking Tool
 :PROPERTIES:
 :header-args:python: :session yamlett :results value raw :async yes :kernel python3 :exports code :eval no-export
 :END:
 
+#+TOC: headlines 2 local
+
+** What is =yamlett=?
+
 =yamlett= provides a simple but flexible way to track your ML experiments.
 
 It has a simple interface with only two primitives: =Experiment= and =Run=.
 
-- An =Experiment= is a named collection of =Run= objects. It is a wrapper around
-  a =pymongo.collection.Collection= object ([[https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection][reference]]), meaning that you can
-  query it using =find= or =aggregate=. Think of it as a way to collect all the
-  modeling iterations of a specific project.
+- An =Experiment= is a collection of =Run= objects. It has a =name= and it is a
+  wrapper around a =pymongo.collection.Collection= object ([[https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection][reference]]), meaning
+  that you can query it using =find= or =aggregate=. Think of it as a way to
+  collect all the modeling iterations of a specific project.
 - A =Run= is used to store information about one iteration of your =Experiment=.
   You can use it to record any ([[http://bsonspec.org][BSON]]-serializable) information you want such as
   model parameters, metrics, or pickled artifacts.
@@ -19,17 +23,22 @@ It has a simple interface with only two primitives: =Experiment= and =Run=.
 The main difference with other tracking tools (e.g. MLflow) is that you can save
 complex information using dictionaries or lists and filter on them later using
 MongoDB queries. This is helpful to save run information using whatever
-structure you prefer. For a quick example, let's compare a simple model run
-using a tracking approach similar to MLflow and the preferred tracking approach
-with =yamlett=.
+structure you prefer.
 
-** Set up the experiment
+Finally, we find =yamlett= particularly useful if your experiments are
+configuration-driven. Once your configuration is loaded as a python object, you
+can easily save it along with other information using =run.store("config",
+config")=.
+
+** Example
+As a simple example, let's compare a simple model run using a tracking approach
+similar to MLflow and the preferred tracking approach with =yamlett=.
+
+*** Set up the experiment
 Let's first load a dataset for a simple classification problem that ships with
 scikit-learn.
 
 #+begin_src python
-%load_ext autoreload
-%autoreload 2
 from sklearn.datasets import load_iris
 
 X, y = load_iris(return_X_y=True)
@@ -51,7 +60,7 @@ model.fit(X, y)
 #+RESULTS:
 : LogisticRegression(C=0.1, max_iter=200)
 
-** MLflow-like tracking
+*** MLflow-like tracking
 With =yamlett=, you are free to organize you tracking information so you could
 decide to store it using a "flat" approach similar to MLflow where each key has
 an associated value and there is no nesting involved.
@@ -124,7 +133,7 @@ quickly get confusing if chosen incorrectly: is it =params/model/fit_intercept=
 or =params/model_fit/intercept= ? It's also more work than needed when
 information already comes nicely organized (e.g. =model.get_params()=).
 
-** =yamlett=-like tracking
+*** =yamlett=-like tracking
 
 The method we propose in this package is to leverage Python dictionaries / NoSQL
 DB documents to automatically store your information in a structured way. Let's
@@ -188,9 +197,11 @@ pprint(run.data)
 #+end_example
 
 The run information is now stored in a document that can be easily parsed based
-on its structure. Additionally, because =yamlett= is built on top of MongoDB,
-you can query runs in an =Experiment= using =find= or =aggregate=. For instance,
-we could retrieve all runs in the default experiment for which:
+on its structure. Note that =yamlett= does not enforce the document hierarchy so
+you are free to organize your run data as you see fit. Additionally, because
+=yamlett= is built on top of MongoDB, you can query runs in an =Experiment=
+using =find= or =aggregate=. For instance, we could retrieve all runs in the
+default experiment for which:
 1. the model was fit with bias term
 2. on a dataset with at least 3000 data points
 3. that yielded an F1 score of at least 0.9
@@ -212,18 +223,14 @@ e.find(
 #+RESULTS:
 : <pymongo.cursor.Cursor at 0x7feeac2b6850>
 
-Note that =yamlett= does not enforce the document hierarchy so you are free to
-organize your run data as you see fit. Finally, we find =yamlett= particularly
-useful if your experiments are configuration-driven. For instance, if you can
-load your configuration file as a dictionary, then you can easily save it in
-along with other information using =run.store("config", config")=.
 
-* Roadmap [2/9]
+* Roadmap [3/10] :noexport:
 
 - [X] Add basic unit tests
 - [X] Add tests across python version using tox
   + tox replaced by Github Actions
-- [ ] Add CI/CD
+- [X] Add CI
+- [ ] Add CD
 - [ ] Release 0.1.0 to github
 - [ ] Release to pypi
 - [ ] Add e2e runnable example
@@ -237,9 +244,4 @@ along with other information using =run.store("config", config")=.
 - [ ] Enable artifacts to be stored on disk or in cloud storage
   + Let users provide an object that supports =open=, =write=, and =read= and
     interacts with the file system
-
-* Local Variables :noexport:
-# Local Variables:
-# eval: (add-hook 'after-save-hook (lambda ()(org-babel-tangle)) nil t)
-# End:
 

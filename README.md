@@ -1,34 +1,42 @@
-- [yamlett - Yet Another Machine Learning Experiment Tracking Tool](#orgbddaa9c)
-  - [Set up the experiment](#org68b8f36)
-  - [MLflow-like tracking](#orgc32df43)
-  - [`yamlett`-like tracking](#org72c2dcd)
-- [Roadmap <code>[2/9]</code>](#org72fd744)
-
-
-
-<a id="orgbddaa9c"></a>
-
 # yamlett - Yet Another Machine Learning Experiment Tracking Tool
+
+1.  [What is `yamlett`?](#org3662998)
+2.  [Example](#org8dcd622)
+    1.  [Set up the experiment](#org23f5e29)
+    2.  [MLflow-like tracking](#org8bf7437)
+    3.  [`yamlett`-like tracking](#org88e325f)
+
+
+<a id="org3662998"></a>
+
+## What is `yamlett`?
 
 `yamlett` provides a simple but flexible way to track your ML experiments.
 
 It has a simple interface with only two primitives: `Experiment` and `Run`.
 
--   An `Experiment` is a named collection of `Run` objects. It is a wrapper around a `pymongo.collection.Collection` object ([reference](https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection)), meaning that you can query it using `find` or `aggregate`. Think of it as a way to collect all the modeling iterations of a specific project.
+-   An `Experiment` is a collection of `Run` objects. It has a `name` and it is a wrapper around a `pymongo.collection.Collection` object ([reference](https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection)), meaning that you can query it using `find` or `aggregate`. Think of it as a way to collect all the modeling iterations of a specific project.
 -   A `Run` is used to store information about one iteration of your `Experiment`. You can use it to record any ([BSON](http://bsonspec.org)-serializable) information you want such as model parameters, metrics, or pickled artifacts.
 
-The main difference with other tracking tools (e.g. MLflow) is that you can save complex information using dictionaries or lists and filter on them later using MongoDB queries. This is helpful to save run information using whatever structure you prefer. For a quick example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
+The main difference with other tracking tools (e.g. MLflow) is that you can save complex information using dictionaries or lists and filter on them later using MongoDB queries. This is helpful to save run information using whatever structure you prefer.
+
+Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config")`.
 
 
-<a id="org68b8f36"></a>
+<a id="org8dcd622"></a>
 
-## Set up the experiment
+## Example
+
+As a simple example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
+
+
+<a id="org23f5e29"></a>
+
+### Set up the experiment
 
 Let&rsquo;s first load a dataset for a simple classification problem that ships with scikit-learn.
 
 ```python
-%load_ext autoreload
-%autoreload 2
 from sklearn.datasets import load_iris
 
 X, y = load_iris(return_X_y=True)
@@ -44,9 +52,9 @@ model.fit(X, y)
 ```
 
 
-<a id="orgc32df43"></a>
+<a id="org8bf7437"></a>
 
-## MLflow-like tracking
+### MLflow-like tracking
 
 With `yamlett`, you are free to organize you tracking information so you could decide to store it using a &ldquo;flat&rdquo; approach similar to MLflow where each key has an associated value and there is no nesting involved.
 
@@ -101,9 +109,9 @@ After running this code, we can retrieve the stored information by calling `run.
 This approach is straightforward: one scalar for each key in the document. However, one downside of this approach is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept` ? It&rsquo;s also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
 
 
-<a id="org72c2dcd"></a>
+<a id="org88e325f"></a>
 
-## `yamlett`-like tracking
+### `yamlett`-like tracking
 
 The method we propose in this package is to leverage Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let&rsquo;s see what it looks like using a similar run as the example above:
 
@@ -153,7 +161,7 @@ Once again, let&rsquo;s call `run.data` and see what information we stored:
                             'verbose': 0,
                             'warm_start': False}}}
 
-The run information is now stored in a document that can be easily parsed based on its structure. Additionally, because `yamlett` is built on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For instance, we could retrieve all runs in the default experiment for which:
+The run information is now stored in a document that can be easily parsed based on its structure. Note that `yamlett` does not enforce the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is built on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For instance, we could retrieve all runs in the default experiment for which:
 
 1.  the model was fit with bias term
 2.  on a dataset with at least 3000 data points
@@ -172,25 +180,3 @@ e.find(
     }
 )
 ```
-
-Note that `yamlett` does not enforce the document hierarchy so you are free to organize your run data as you see fit. Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. For instance, if you can load your configuration file as a dictionary, then you can easily save it in along with other information using `run.store("config", config")`.
-
-
-<a id="org72fd744"></a>
-
-# Roadmap <code>[2/9]</code>
-
--   [X] Add basic unit tests
--   [X] Add tests across python version using tox
-    -   tox replaced by Github Actions
--   [ ] Add CI/CD
--   [ ] Release 0.1.0 to github
--   [ ] Release to pypi
--   [ ] Add e2e runnable example
--   [ ] Add example for connecting to Metabase and Presto
-    -   metabase allows connecting to an instance of mongodb and query data
-    -   sql is more common so we can plug presto on top of mongodb and link metabase to presto
-    -   caveat that the schema cannot change when using Presto: ie no new fields in new runs
--   [ ] Use environment variables to define MongoDB parameters
--   [ ] Enable artifacts to be stored on disk or in cloud storage
-    -   Let users provide an object that supports `open`, `write`, and `read` and interacts with the file system
