@@ -27,7 +27,7 @@ Finally, we find `yamlett` particularly useful if your experiments are configura
 
 ## Example
 
-As a simple example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
+As an example, let&rsquo;s compare a simple model run that we first track using an approach similar to MLflow and then using the approach we advertise in this package.
 
 
 <a id="set-up-experiment"></a>
