@@ -1,13 +1,13 @@
 # yamlett - Yet Another Machine Learning Experiment Tracking Tool
 
-1.  [What is `yamlett`?](#org3662998)
-2.  [Example](#org8dcd622)
-    1.  [Set up the experiment](#org23f5e29)
-    2.  [MLflow-like tracking](#org8bf7437)
-    3.  [`yamlett`-like tracking](#org88e325f)
+1.  [What is `yamlett`?](#orgfecd218)
+2.  [Example](#org17609e3)
+    1.  [Set up the experiment](#org84102e1)
+    2.  [MLflow-like tracking](#org60a21ac)
+    3.  [`yamlett`-like tracking](#orgce72b02)
 
 
-<a id="org3662998"></a>
+<a id="orgfecd218"></a>
 
 ## What is `yamlett`?
 
@@ -23,14 +23,14 @@ The main difference with other tracking tools (e.g. MLflow) is that you can save
 Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config")`.
 
 
-<a id="org8dcd622"></a>
+<a id="org17609e3"></a>
 
 ## Example
 
 As a simple example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
 
 
-<a id="org23f5e29"></a>
+<a id="org84102e1"></a>
 
 ### Set up the experiment
 
@@ -52,7 +52,7 @@ model.fit(X, y)
 ```
 
 
-<a id="org8bf7437"></a>
+<a id="org60a21ac"></a>
 
 ### MLflow-like tracking
 
@@ -61,7 +61,6 @@ With `yamlett`, you are free to organize you tracking information so you could d
 ```python
 from yamlett import Run
 from sklearn.metrics import f1_score
-from collections import Counter
 
 run = Run()
 
@@ -109,7 +108,7 @@ After running this code, we can retrieve the stored information by calling `run.
 This approach is straightforward: one scalar for each key in the document. However, one downside of this approach is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept` ? It&rsquo;s also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
 
 
-<a id="org88e325f"></a>
+<a id="orgce72b02"></a>
 
 ### `yamlett`-like tracking
 
@@ -117,6 +116,7 @@ The method we propose in this package is to leverage Python dictionaries / NoSQL
 
 ```python
 from yamlett import Run
+from sklearn.metrics import f1_score
 
 run = Run()
 

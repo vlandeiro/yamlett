@@ -68,7 +68,6 @@ an associated value and there is no nesting involved.
 #+begin_src python
 from yamlett import Run
 from sklearn.metrics import f1_score
-from collections import Counter
 
 run = Run()
 
@@ -141,6 +140,7 @@ see what it looks like using a similar run as the example above:
 
 #+begin_src python
 from yamlett import Run
+from sklearn.metrics import f1_score
 
 run = Run()
 
