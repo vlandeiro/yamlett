@@ -147,9 +147,9 @@ run = Run()
 # store your model information
 model_info = {
     "class": model.__class__.__name__,
-    **model.get_params(),
+    "params": model.get_params(),
 }
-run.store(f"model.metadata", model_info)
+run.store(f"model", model_info)
 
 # store information about your data
 run.store("data", {"n_features": X.shape[0], "n_observations": X.shape[1]})
@@ -173,35 +173,47 @@ pprint(run.data)
 
 #+RESULTS:
 #+begin_example
-{'_id': '8cdbabae6c4441f9bf9aae02f09033f9',
- '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 21, 35, 11, 542000),
-              'last_modified_at': datetime.datetime(2020, 12, 5, 21, 35, 11, 621000)},
+{'_id': 'b7736c7b3cc3439ca379e3e6a2b6d9b8',
+ '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 446000),
+              'last_modified_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 529000)},
  'data': {'n_features': 150, 'n_observations': 4},
  'metrics': {'f1_score': 0.9599839935974389},
- 'model': {'metadata': {'C': 0.1,
-                        'class': 'LogisticRegression',
-                        'class_weight': None,
-                        'dual': False,
-                        'fit_intercept': True,
-                        'intercept_scaling': 1,
-                        'l1_ratio': None,
-                        'max_iter': 200,
-                        'multi_class': 'auto',
-                        'n_jobs': None,
-                        'penalty': 'l2',
-                        'random_state': None,
-                        'solver': 'lbfgs',
-                        'tol': 0.0001,
-                        'verbose': 0,
-                        'warm_start': False}}}
+ 'model': {'class': 'LogisticRegression',
+           'params': {'C': 0.1,
+                      'class_weight': None,
+                      'dual': False,
+                      'fit_intercept': True,
+                      'intercept_scaling': 1,
+                      'l1_ratio': None,
+                      'max_iter': 200,
+                      'multi_class': 'auto',
+                      'n_jobs': None,
+                      'penalty': 'l2',
+                      'random_state': None,
+                      'solver': 'lbfgs',
+                      'tol': 0.0001,
+                      'verbose': 0,
+                      'warm_start': False}}}
 #+end_example
 
 The run information is now stored in a document that can be easily parsed based
-on its structure. Note that =yamlett= does not enforce the document hierarchy so
-you are free to organize your run data as you see fit. Additionally, because
-=yamlett= is built on top of MongoDB, you can query runs in an =Experiment=
-using =find= or =aggregate=. For instance, we could retrieve all runs in the
-default experiment for which:
+on its structure. The top level keys of the document are =data=, =metrics=, and
+=model= and we think it is easier to find information this way than with long
+keys in a flat dictionary. You may want to look at all the metrics for a given
+run using =run.data["metrics"]= and that's easy to do with =yamlett=.
+
+#+begin_src python :exports results
+pprint(run.data["metrics"])
+#+end_src
+
+#+RESULTS:
+: {'f1_score': 0.9599839935974389}
+
+Note that =yamlett= does not enforce the document hierarchy so you are free to
+organize your run data as you see fit. Additionally, because =yamlett= is built
+on top of MongoDB, you can query runs in an =Experiment= using =find= or
+=aggregate=. For instance, we could retrieve all runs in the default experiment
+for which:
 1. the model was fit with bias term
 2. on a dataset with at least 3000 data points
 3. that yielded an F1 score of at least 0.9

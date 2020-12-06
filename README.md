@@ -1,13 +1,13 @@
 # yamlett - Yet Another Machine Learning Experiment Tracking Tool
 
-1.  [What is `yamlett`?](#orgfecd218)
-2.  [Example](#org17609e3)
-    1.  [Set up the experiment](#org84102e1)
-    2.  [MLflow-like tracking](#org60a21ac)
-    3.  [`yamlett`-like tracking](#orgce72b02)
+1.  [What is `yamlett`?](#orgcb0feb4)
+2.  [Example](#org916d1f9)
+    1.  [Set up the experiment](#org99dd96d)
+    2.  [MLflow-like tracking](#org9eaef39)
+    3.  [`yamlett`-like tracking](#org2b09022)
 
 
-<a id="orgfecd218"></a>
+<a id="orgcb0feb4"></a>
 
 ## What is `yamlett`?
 
@@ -23,14 +23,14 @@ The main difference with other tracking tools (e.g. MLflow) is that you can save
 Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config")`.
 
 
-<a id="org17609e3"></a>
+<a id="org916d1f9"></a>
 
 ## Example
 
 As a simple example, let&rsquo;s compare a simple model run using a tracking approach similar to MLflow and the preferred tracking approach with `yamlett`.
 
 
-<a id="org84102e1"></a>
+<a id="org99dd96d"></a>
 
 ### Set up the experiment
 
@@ -52,7 +52,7 @@ model.fit(X, y)
 ```
 
 
-<a id="org60a21ac"></a>
+<a id="org9eaef39"></a>
 
 ### MLflow-like tracking
 
@@ -108,7 +108,7 @@ After running this code, we can retrieve the stored information by calling `run.
 This approach is straightforward: one scalar for each key in the document. However, one downside of this approach is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept` ? It&rsquo;s also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
 
 
-<a id="orgce72b02"></a>
+<a id="org2b09022"></a>
 
 ### `yamlett`-like tracking
 
@@ -123,9 +123,9 @@ run = Run()
 # store your model information
 model_info = {
     "class": model.__class__.__name__,
-    **model.get_params(),
+    "params": model.get_params(),
 }
-run.store(f"model.metadata", model_info)
+run.store(f"model", model_info)
 
 # store information about your data
 run.store("data", {"n_features": X.shape[0], "n_observations": X.shape[1]})
@@ -139,29 +139,33 @@ run.store("metrics.f1_score", f1_score(y, model.predict(X), average="weighted"))
 
 Once again, let&rsquo;s call `run.data` and see what information we stored:
 
-    {'_id': '8cdbabae6c4441f9bf9aae02f09033f9',
-     '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 21, 35, 11, 542000),
-                  'last_modified_at': datetime.datetime(2020, 12, 5, 21, 35, 11, 621000)},
+    {'_id': 'b7736c7b3cc3439ca379e3e6a2b6d9b8',
+     '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 446000),
+                  'last_modified_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 529000)},
      'data': {'n_features': 150, 'n_observations': 4},
      'metrics': {'f1_score': 0.9599839935974389},
-     'model': {'metadata': {'C': 0.1,
-                            'class': 'LogisticRegression',
-                            'class_weight': None,
-                            'dual': False,
-                            'fit_intercept': True,
-                            'intercept_scaling': 1,
-                            'l1_ratio': None,
-                            'max_iter': 200,
-                            'multi_class': 'auto',
-                            'n_jobs': None,
-                            'penalty': 'l2',
-                            'random_state': None,
-                            'solver': 'lbfgs',
-                            'tol': 0.0001,
-                            'verbose': 0,
-                            'warm_start': False}}}
+     'model': {'class': 'LogisticRegression',
+               'params': {'C': 0.1,
+                          'class_weight': None,
+                          'dual': False,
+                          'fit_intercept': True,
+                          'intercept_scaling': 1,
+                          'l1_ratio': None,
+                          'max_iter': 200,
+                          'multi_class': 'auto',
+                          'n_jobs': None,
+                          'penalty': 'l2',
+                          'random_state': None,
+                          'solver': 'lbfgs',
+                          'tol': 0.0001,
+                          'verbose': 0,
+                          'warm_start': False}}}
 
-The run information is now stored in a document that can be easily parsed based on its structure. Note that `yamlett` does not enforce the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is built on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For instance, we could retrieve all runs in the default experiment for which:
+The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are `data`, `metrics`, and `model` and we think it is easier to find information this way than with long keys in a flat dictionary. You may want to look at all the metrics for a given run using `run.data["metrics"]` and that&rsquo;s easy to do with `yamlett`.
+
+    {'f1_score': 0.9599839935974389}
+
+Note that `yamlett` does not enforce the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is built on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For instance, we could retrieve all runs in the default experiment for which:
 
 1.  the model was fit with bias term
 2.  on a dataset with at least 3000 data points
