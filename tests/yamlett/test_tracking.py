@@ -41,10 +41,9 @@ def test_experiment(name, kwargs, patch, context):
                 print(experiment.foo_bar_machin_truc)
 
 
-def helper_validate_run_data(result: Dict[str, Any], finished):
-    assert {"_id", "created_at", "last_modified_at"} <= set(result.keys())
-    if finished:
-        assert "finished_at" in result.keys()
+def helper_validate_run_data(result: Dict[str, Any]):
+    assert "_id" in result.keys()
+    assert {"created_at", "last_modified_at"} <= set(result["_yamlett"].keys())
 
 
 @pytest.mark.parametrize(
@@ -55,16 +54,9 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
 
     with context:
         with patch:
-            # initialize corresponding mock MongoClient
-            client = pymongo.MongoClient(**kwargs)
-
             # initialize run
             run = Run(experiment_name=experiment_name, **kwargs)
             assert run._data is None
-            assert not run._dirty
-
-            # start the run
-            run.start()
             assert run._dirty
 
             # store a value
@@ -73,7 +65,7 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
 
             # retrieve twice to check caching works okay
             for i in range(2):
-                helper_validate_run_data(run.data, finished=False)
+                helper_validate_run_data(run.data)
                 assert not run._dirty
                 assert "value" in run.data.keys()
                 assert run.data["value"] == 1234
@@ -82,96 +74,17 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
             run.store("other", 1, push=True)
             assert run._dirty
 
-            helper_validate_run_data(run.data, finished=False)
+            helper_validate_run_data(run.data)
             assert not run._dirty
             assert "value" in run.data.keys()
             assert run.data["value"] == 1234
             assert "other" in run.data.keys()
             assert run.data["other"] == [1]
 
-            # stop the run
-            run.stop()
-            assert run._dirty
-
-            # resume the run
-            run.start()
-            assert run._dirty
-
-            # add another value to the same list
             run.store("other", 2, push=True)
             assert run._dirty
 
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2]
-
-            # stop the run
-            run.stop()
-
-            # validate the run one more time but make sure we have the
-            # information about finishing time
-            helper_validate_run_data(run.data, finished=True)
-            assert not run._dirty
-
-
-@pytest.mark.parametrize(
-    "experiment_name, kwargs, patch, context", [("runs", {}, mongomock.patch(), None)]
-)
-def test_run_context_manager(experiment_name, kwargs, patch, context):
-    context = context or nullcontext()
-
-    with context:
-        with patch:
-            # initialize corresponding mock MongoClient
-            client = pymongo.MongoClient(**kwargs)
-
-            # initialize run
-            run = Run(experiment_name=experiment_name, **kwargs)
-            assert run._data is None
-            assert not run._dirty
-
-            # start the run
-            run.start()
-            assert run._dirty
-
-            # store a value
-            run.store("value", 1234)
-            assert run._dirty
-
-            # retrieve twice to check caching works okay
-            for i in range(2):
-                helper_validate_run_data(run.data, finished=False)
-                assert not run._dirty
-                assert "value" in run.data.keys()
-                assert run.data["value"] == 1234
-
-            # add another value by creating a list
-            run.store("other", 1, push=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
-            assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1]
-
-            # stop the run
-            run.stop()
-            assert run._dirty
-
-            # resume the run
-            run.start()
-            assert run._dirty
-
-            # add another value to the same list
-            run.store("other", 2, push=True)
-            assert run._dirty
-
-            helper_validate_run_data(run.data, finished=False)
+            helper_validate_run_data(run.data)
             assert not run._dirty
             assert "value" in run.data.keys()
             assert run.data["value"] == 1234
@@ -180,7 +93,5 @@ def test_run_context_manager(experiment_name, kwargs, patch, context):
 
             # validate the run one more time but make sure we have the
             # information about finishing time
-            helper_validate_run_data(run.data, finished=True)
+            helper_validate_run_data(run.data)
             assert not run._dirty
-
-            run.stop()

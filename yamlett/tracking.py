@@ -44,15 +44,9 @@ class Run:
             self.id = uuid4().hex
         self.experiment_name = experiment_name
         self.mongo_kwargs = kwargs
-        self._dirty = False
+        self._dirty = True
         self._data = None
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.stop()
+        self._started = False
 
     @property
     def experiment(self) -> Experiment:
@@ -65,21 +59,15 @@ class Run:
             self._dirty = False
         return self._data
 
-    def start(self):
+    def _start(self):
         # insert a new document storing the run id and the creation time
         try:
-            doc = {"_id": self.id, "created_at": datetime.now()}
+            doc = {"_id": self.id, "_yamlett": {"created_at": datetime.now()}}
             self.experiment.insert_one(doc)
         except DuplicateKeyError:  # resume the run
             pass
         self._dirty = True
-
-    def stop(self):
-        # record the final time
-        filter = {"_id": self.id}
-        update = {"$set": {"finished_at": datetime.now()}}
-        self.experiment.update_one(filter, update)
-        self._dirty = True
+        self._started = True
 
     def store(
         self,
@@ -87,6 +75,9 @@ class Run:
         value: Union[Any, Dict[str, Any]],
         push: bool = False,
     ):
+        if not self._started:
+            self._start()
+
         filter = {"_id": self.id}
         op = "$push" if push else "$set"
         update = {op: {key: value}}
@@ -94,5 +85,5 @@ class Run:
         if update_result.modified_count == 0:
             raise ValueError(f"Updating operation failed: {update}")
         self._dirty = True
-        last_modified = {"$set": {"last_modified_at": datetime.now()}}
+        last_modified = {"$set": {"_yamlett.last_modified_at": datetime.now()}}
         self.experiment.update_one(filter, last_modified)
