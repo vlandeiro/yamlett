@@ -59,7 +59,7 @@ jobs:
     - name: Bump version
       run: |
         echo ${{ github.event }}
-        echo ${{ gtihub.event_path }}
+        echo ${{ github.event_path }}
     # - name: Build distribution
     #   run: |
     #     poetry build
