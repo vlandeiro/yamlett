@@ -253,15 +253,15 @@ e.find(
 : <pymongo.cursor.Cursor at 0x7feeac2b6850>
 
 
-* Roadmap [3/10] :noexport:
+* Roadmap [6/13] :noexport:
 
 - [X] Add basic unit tests
 - [X] Add tests across python version using tox
   + tox replaced by Github Actions
 - [X] Add CI
-- [ ] Add CD
-- [ ] Release 0.1.0 to github
-- [ ] Release to pypi
+- [X] Add CD
+- [X] Release 0.0.1 to github
+- [X] Release to pypi
 - [ ] Add e2e runnable example
 - [ ] Add example for connecting to Metabase and Presto
   + metabase allows connecting to an instance of mongodb and query data
@@ -273,4 +273,8 @@ e.find(
 - [ ] Enable artifacts to be stored on disk or in cloud storage
   + Let users provide an object that supports =open=, =write=, and =read= and
     interacts with the file system
-
+- [ ] add description to pypi release
+- [ ] add documentation through rtd or github pages
+- [ ] add installation guide
+  + ~pip install~
+  + needs mongodb instance
