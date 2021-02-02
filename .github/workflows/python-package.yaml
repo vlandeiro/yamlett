@@ -55,11 +55,10 @@ jobs:
     - name: Bump version
       run: |
         TAG=$(echo ${{ github.ref }} | cut -d/ -f3)
-        echo $TAG
         poetry version $TAG
-    # - name: Build distribution
-    #   run: |
-    #     poetry build
-    # - name: Publish to PyPI
-    #   run: |
-    #     poetry publish --user vlandeiro --password ${{ secrets.PYPI_API_TOKEN }} --dry-run
+    - name: Build distribution
+      run: |
+        poetry build
+    - name: Publish to PyPI
+      run: |
+        poetry publish --user vlandeiro --password ${{ secrets.PYPI_API_TOKEN }} --dry-run
