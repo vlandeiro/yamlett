@@ -54,10 +54,9 @@ jobs:
         poetry-version: ${{ matrix.poetry-version }}
     - name: Bump version
       run: |
-        echo ${{ github.event }}
-        echo ${{ github.event_path }}
-        echo ${{ github.ref }}
-        cat ${{ github.event_path }}
+        TAG=$(echo ${{ github.ref }} | cut -d/ -f3)
+        echo $TAG
+        poetry version $TAG
     # - name: Build distribution
     #   run: |
     #     poetry build
