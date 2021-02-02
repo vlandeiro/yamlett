@@ -13,21 +13,21 @@
 
 `yamlett` provides a simple but flexible way to track your ML experiments.
 
-It has a simple interface with only two primitives: `Experiment` and `Run`.
+It has a simple interface with only two primitives: `Run` and `Experiment`.
 
--   An `Experiment` is a collection of `Run` objects. It has a `name` and it is a wrapper around a `pymongo.collection.Collection` object ([reference](https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection)), meaning that you can query it using `find` or `aggregate`. Think of it as a way to collect all the modeling iterations of a specific project.
 -   A `Run` is used to store information about one iteration of your `Experiment`. You can use it to record any ([BSON](http://bsonspec.org)-serializable) information you want such as model parameters, metrics, or pickled artifacts.
+-   An `Experiment` is a collection of `Run` objects. It has a `name` and it is a wrapper around a `pymongo.collection.Collection` object ([reference](https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection)), meaning that you can query it using `find` or `aggregate`. Think of it as a way to collect all the modeling iterations for a specific project.
 
-The main difference with other tracking tools (e.g. MLflow) is that you can save complex information using dictionaries or lists and filter on them later using MongoDB queries. This is helpful to save run information using whatever structure you prefer.
+The main difference with other tracking tools (e.g. MLflow) is that `yamlett` lets you save complex structured information using dictionaries or lists and filter on them later using MongoDB queries.
 
-Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config")`.
+Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config)`.
 
 
 <a id="example"></a>
 
 ## Example
 
-As an example, let&rsquo;s compare a simple model run that we first track using an approach similar to MLflow and then using the approach we advertise in this package.
+As an example, let&rsquo;s compare the same simple model run but tracking it with two different approaches: MLflow-like vs yamlett.
 
 
 <a id="set-up-experiment"></a>
@@ -42,7 +42,7 @@ from sklearn.datasets import load_iris
 X, y = load_iris(return_X_y=True)
 ```
 
-Let&rsquo;s also create a simple logistic regression model and simply train that model on our simple dataset, increasing the number of iterations and changing the regularization strength.
+Then, we create a simple logistic regression model and train that model on the iris dataset, increasing the number of iterations and changing the regularization strength.
 
 ```python
 from sklearn.linear_model import LogisticRegression
@@ -56,7 +56,7 @@ model.fit(X, y)
 
 ### MLflow-like tracking
 
-With `yamlett`, you are free to organize you tracking information so you could decide to store it using a &ldquo;flat&rdquo; approach similar to MLflow where each key has an associated value and there is no nesting involved.
+With `yamlett`, you are free to organize you tracking information so you could decide to store it using a &ldquo;flat&rdquo; approach similar to MLflow where each key has an associated value and there can be no nesting.
 
 ```python
 from yamlett import Run
@@ -105,14 +105,14 @@ After running this code, we can retrieve the stored information by calling `run.
      'params_model_verbose': 0,
      'params_model_warm_start': False}
 
-This approach is straightforward: one scalar for each key in the document. However, one downside of this approach is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept` ? It&rsquo;s also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
+This approach is straightforward: one scalar for each key in the document. However, one downside is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it `params/model/fit_intercept` or `params/model_fit/intercept`? It is also more work than needed when information already comes nicely organized (e.g. `model.get_params()`).
 
 
 <a id="yamlett-like-tracking"></a>
 
 ### `yamlett`-like tracking
 
-The method we propose in this package is to leverage Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let&rsquo;s see what it looks like using a similar run as the example above:
+The method we propose in this package leverages Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let&rsquo;s see what it looks like using the same run as above:
 
 ```python
 from yamlett import Run
@@ -161,13 +161,13 @@ Once again, let&rsquo;s call `run.data` and see what information we stored:
                           'verbose': 0,
                           'warm_start': False}}}
 
-The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are `data`, `metrics`, and `model` and we think it is easier to find information this way than with long keys in a flat dictionary. You may want to look at all the metrics for a given run using `run.data["metrics"]` and that&rsquo;s easy to do with `yamlett`.
+The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are `data`, `metrics`, and `model` and we argue this makes it easier to find information than with long keys in a flat dictionary. For instance, you may want to look at all the metrics for a given run using `run.data["metrics"]`.
 
     {'f1_score': 0.9599839935974389}
 
-Note that `yamlett` does not enforce the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is built on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For instance, we could retrieve all runs in the default experiment for which:
+Note that `yamlett` does not impose the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is a light abstraction layer on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For example, we can retrieve all runs in the default experiment for which:
 
-1.  the model was fit with bias term
+1.  the model was fit with a bias term
 2.  on a dataset with at least 3000 data points
 3.  that yielded an F1 score of at least 0.9
 
