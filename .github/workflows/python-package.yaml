@@ -1,10 +1,6 @@
 name: Python package
 
-on:
-  push:
-  release:
-    types:
-      - created
+on: [push]
 
 jobs:
   test:
@@ -40,7 +36,7 @@ jobs:
 
   publish:
     # needs: test
-    if: github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -60,6 +56,8 @@ jobs:
       run: |
         echo ${{ github.event }}
         echo ${{ github.event_path }}
+        echo ${{ github.ref }}
+        cat ${{ github.event_path }}
     # - name: Build distribution
     #   run: |
     #     poetry build
