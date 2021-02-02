@@ -61,4 +61,5 @@ jobs:
         poetry build
     - name: Publish to PyPI
       run: |
-        poetry publish --user vlandeiro --password ${{ secrets.PYPI_API_TOKEN }} --dry-run
+        poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+        poetry publish --dry-run
