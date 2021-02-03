@@ -282,7 +282,7 @@ e.find(
 : <pymongo.cursor.Cursor at 0x7feeac2b6850>
 
 
-* Roadmap [7/13] :noexport:
+* Roadmap [8/13] :noexport:
 
 - [X] Add basic unit tests
 - [X] Add tests across python version using tox
@@ -291,19 +291,19 @@ e.find(
 - [X] Add CD
 - [X] Release 0.0.1 to github
 - [X] Release to pypi
+- [X] add description to pypi release
+- [X] add installation guide
+  + ~pip install~
+  + needs mongodb instance
 - [ ] Add e2e runnable example
+- [ ] Use environment variables to define MongoDB parameters
+- [ ] Enable artifacts to be stored on disk or in cloud storage
+  + Let users provide an object that supports =open=, =write=, and =read= and
+    interacts with the file system
+- [ ] publish documentation through rtd or github pages
 - [ ] Add example for connecting to Metabase and Presto
   + metabase allows connecting to an instance of mongodb and query data
   + sql is more common so we can plug presto on top of mongodb and link metabase
     to presto
   + caveat that the schema cannot change when using Presto: ie no new fields in
     new runs
-- [ ] Use environment variables to define MongoDB parameters
-- [ ] Enable artifacts to be stored on disk or in cloud storage
-  + Let users provide an object that supports =open=, =write=, and =read= and
-    interacts with the file system
-- [ ] add description to pypi release
-- [ ] publish documentation through rtd or github pages
-- [X] add installation guide
-  + ~pip install~
-  + needs mongodb instance
