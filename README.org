@@ -6,6 +6,12 @@
 
 #+TOC: headlines 2 local
 
+#+begin_export markdown
+![PyPI](https://img.shields.io/pypi/v/yamlett)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/yamlett)
+![PyPI - License](https://img.shields.io/pypi/l/yamlett)
+#+end_export
+
 ** What is =yamlett=?
 :PROPERTIES:
 :CUSTOM_ID: what-is-yamlett
@@ -27,17 +33,40 @@ The main difference with other tracking tools (e.g. MLflow) is that =yamlett=
 lets you save complex structured information using dictionaries or lists and
 filter on them later using MongoDB queries.
 
-Finally, we find =yamlett= particularly useful if your experiments are
-configuration-driven. Once your configuration is loaded as a python object, you
-can easily save it along with other information using ~run.store("config",
-config)~.
+=yamlett= is particularly useful if your experiments are configuration-driven.
+Once your configuration is loaded as a python object, storing it is as easy as
+~run.store("config", config)~.
+
+** Installation
+:PROPERTIES:
+:CUSTOM_ID: installation
+:END:
+
+=yamlett= can be installed with ~pip~:
+#+begin_src sh :eval no
+pip install yamlett
+#+end_src
+
+It also requires a MongoDB instance that you can connect to. If you don't have
+one and just want to try out =yamlett=, we provide a [[file:docker-compose.yaml][docker compose file]] that
+starts a MongoDB instance available at =localhost:27017= (along with instances
+of [[https://prestodb.io][Presto]] and [[https://www.metabase.com][Metabase]]).
+
+** Getting started
+
+In =yamlett=, ~MongoClient~ [[https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient][connection parameters]] can be passed as keyword
+arguments in both =Run= and =Experiment= to specify what MongoDB instance you
+want to connect to. If you don't pass anything, the default arguments
+(=localhost:27017=) will be used. If you have a custom MongoDB instance, you can
+specify its ~host~ and ~port~ when creating a =Run= using src_python[:eval no
+:export code]{run = Run(host="mymongo.host.com", port=27017)}.
 
 ** Example
 :PROPERTIES:
 :CUSTOM_ID: example
 :END:
 
-As an example, let's compare the same simple model run but tracking it with two
+In this section, we compare the same model run but with two different tracking
 different approaches: MLflow-like vs yamlett.
 
 *** Set up the experiment
@@ -45,7 +74,7 @@ different approaches: MLflow-like vs yamlett.
 :CUSTOM_ID: set-up-experiment
 :END:
 
-Let's first load a dataset for a simple classification problem that ships with
+First, let's load a dataset for a simple classification problem that ships with
 scikit-learn.
 
 #+begin_src python
@@ -56,9 +85,9 @@ X, y = load_iris(return_X_y=True)
 
 #+RESULTS:
 
-Then, we create a simple logistic regression model and train that model on the
-iris dataset, increasing the number of iterations and changing the
-regularization strength.
+Then, we create a logistic regression model and train that model on the iris
+dataset, increasing the number of iterations and changing the regularization
+strength.
 
 #+begin_src python
 from sklearn.linear_model import LogisticRegression
@@ -146,7 +175,7 @@ confusing if chosen incorrectly: is it =params/model/fit_intercept= or
 =params/model_fit/intercept=? It is also more work than needed when information
 already comes nicely organized (e.g. =model.get_params()=).
 
-*** =yamlett=-like tracking
+*** =yamlett= tracking
 :PROPERTIES:
 :CUSTOM_ID: yamlett-like-tracking
 :END:
@@ -253,7 +282,7 @@ e.find(
 : <pymongo.cursor.Cursor at 0x7feeac2b6850>
 
 
-* Roadmap [6/13] :noexport:
+* Roadmap [7/13] :noexport:
 
 - [X] Add basic unit tests
 - [X] Add tests across python version using tox
@@ -274,7 +303,7 @@ e.find(
   + Let users provide an object that supports =open=, =write=, and =read= and
     interacts with the file system
 - [ ] add description to pypi release
-- [ ] add documentation through rtd or github pages
-- [ ] add installation guide
+- [ ] publish documentation through rtd or github pages
+- [X] add installation guide
   + ~pip install~
   + needs mongodb instance

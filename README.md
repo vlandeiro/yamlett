@@ -1,10 +1,16 @@
 # yamlett - Yet Another Machine Learning Experiment Tracking Tool
 
 1.  [What is `yamlett`?](#what-is-yamlett)
-2.  [Example](#example)
+2.  [Installation](#installation)
+3.  [Getting started](#org7e0759d)
+4.  [Example](#example)
     1.  [Set up the experiment](#set-up-experiment)
     2.  [MLflow-like tracking](#mlflow-like-tracking)
-    3.  [`yamlett`-like tracking](#yamlett-like-tracking)
+    3.  [`yamlett` tracking](#yamlett-like-tracking)
+
+![PyPI](https://img.shields.io/pypi/v/yamlett)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/yamlett)
+![PyPI - License](https://img.shields.io/pypi/l/yamlett)
 
 
 <a id="what-is-yamlett"></a>
@@ -20,21 +26,41 @@ It has a simple interface with only two primitives: `Run` and `Experiment`.
 
 The main difference with other tracking tools (e.g. MLflow) is that `yamlett` lets you save complex structured information using dictionaries or lists and filter on them later using MongoDB queries.
 
-Finally, we find `yamlett` particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, you can easily save it along with other information using `run.store("config", config)`.
+`yamlett` is particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, storing it is as easy as `run.store("config", config)`.
+
+
+<a id="installation"></a>
+
+## Installation
+
+`yamlett` can be installed with `pip`:
+
+```sh
+pip install yamlett
+```
+
+It also requires a MongoDB instance that you can connect to. If you don&rsquo;t have one and just want to try out `yamlett`, we provide a [docker compose file](docker-compose.yaml) that starts a MongoDB instance available at `localhost:27017` (along with instances of [Presto](https://prestodb.io) and [Metabase](https://www.metabase.com)).
+
+
+<a id="org7e0759d"></a>
+
+## Getting started
+
+In `yamlett`, `MongoClient` [connection parameters](https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient) can be passed as keyword arguments in both `Run` and `Experiment` to specify what MongoDB instance you want to connect to. If you don&rsquo;t pass anything, the default arguments (`localhost:27017`) will be used. If you have a custom MongoDB instance, you can specify its `host` and `port` when creating a `Run` using `run = Run(host="mymongo.host.com", port=27017)`.
 
 
 <a id="example"></a>
 
 ## Example
 
-As an example, let&rsquo;s compare the same simple model run but tracking it with two different approaches: MLflow-like vs yamlett.
+In this section, we compare the same model run but with two different tracking different approaches: MLflow-like vs yamlett.
 
 
 <a id="set-up-experiment"></a>
 
 ### Set up the experiment
 
-Let&rsquo;s first load a dataset for a simple classification problem that ships with scikit-learn.
+First, let&rsquo;s load a dataset for a simple classification problem that ships with scikit-learn.
 
 ```python
 from sklearn.datasets import load_iris
@@ -42,7 +68,7 @@ from sklearn.datasets import load_iris
 X, y = load_iris(return_X_y=True)
 ```
 
-Then, we create a simple logistic regression model and train that model on the iris dataset, increasing the number of iterations and changing the regularization strength.
+Then, we create a logistic regression model and train that model on the iris dataset, increasing the number of iterations and changing the regularization strength.
 
 ```python
 from sklearn.linear_model import LogisticRegression
@@ -110,7 +136,7 @@ This approach is straightforward: one scalar for each key in the document. Howev
 
 <a id="yamlett-like-tracking"></a>
 
-### `yamlett`-like tracking
+### `yamlett` tracking
 
 The method we propose in this package leverages Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let&rsquo;s see what it looks like using the same run as above:
 
