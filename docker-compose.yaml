@@ -3,7 +3,7 @@ services:
   mongodb:
     image: mongo:latest
     ports:
-      - "27018:27017"
+      - "27017:27017"
     volumes:
       - mongo_volume:/data/db
   metabase:
