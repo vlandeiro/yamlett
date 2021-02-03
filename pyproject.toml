@@ -4,6 +4,15 @@ version = "0.0.1"
 description = "Yet Another ML Experiment Tracking Tool"
 authors = ["Virgile Landeiro <virgile.landeiro@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/vlandeiro/yamlett"
+repository = "https://github.com/vlandeiro/yamlett"
+keywords = ["ml", "machine learning", "experiment tracking", "mongodb"]
+classifiers = [
+            "Topic :: Scientific/Engineering :: Artificial Intelligence",
+            "Development Status :: 3 - Alpha",
+            "Intended Audience :: Science/Research"
+]
 
 [tool.poetry.dependencies]
 python = "^3.6"
