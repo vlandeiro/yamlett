@@ -18,6 +18,7 @@ classifiers = [
 python = "^3.6"
 pymongo = "^3.11.1"
 python-box = {extras = ["all"], version = "^5.2.0"}
+cloudpickle = "^1.6.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
