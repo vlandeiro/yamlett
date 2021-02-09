@@ -295,11 +295,13 @@ e.find(
 - [X] add installation guide
   + ~pip install~
   + needs mongodb instance
-- [ ] Add e2e runnable example
-- [ ] Use environment variables to define MongoDB parameters
+- [ ] Add docstrings
+- [ ] Allow dotted notation for returned data
 - [ ] Enable artifacts to be stored on disk or in cloud storage
   + Let users provide an object that supports =open=, =write=, and =read= and
     interacts with the file system
+- [ ] Add e2e runnable example
+- [ ] Use environment variables to define MongoDB parameters
 - [ ] publish documentation through rtd or github pages
 - [ ] Add example for connecting to Metabase and Presto
   + metabase allows connecting to an instance of mongodb and query data
