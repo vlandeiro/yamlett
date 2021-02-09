@@ -3,23 +3,27 @@ from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
 import pymongo
-from fastcore.meta import delegates
 from pymongo.errors import DuplicateKeyError
 from box import Box
 
 
 class Experiment:
-    @delegates(pymongo.MongoClient)
     def __init__(
         self,
         name: str = "runs",
-        **kwargs,
+        mongo_options: Optional[Dict] = None,
     ):
+        """Access a named ``Experiment`` that can be queried.
+
+        :param name: name of the experiment.
+        :param mongo_options: dictionary used to pass arguments to
+            ``MongoClient``.
+        """
         self.name = name
-        self.mongo_kwargs = kwargs
+        self.mongo_options = mongo_options
 
     def __getattr__(self, key: str) -> Any:
-        with pymongo.MongoClient(**self.mongo_kwargs) as m:
+        with pymongo.MongoClient(**self.mongo_options) as m:
             collection = m.yamlett[self.name]
             # NOTE: use ``dir`` on a pymongo.Collection object to find valid
             # methods because missing attributes are automatically created as
@@ -33,29 +37,27 @@ class Experiment:
 
 
 class Run:
-    @delegates(pymongo.MongoClient)
     def __init__(
         self,
         id: Optional[str] = None,
         experiment_name: str = "runs",
-        **kwargs,
+        mongo_options: Optional[Dict] = None,
     ):
-        """Creates a new Run or points to an existing Run if the provided ``id``
+        """Creates a new Run or retrieves an existing Run if the provided ``id``
         already exists.
 
         :param id: unique ID for the Run object.  If ``None``, the ID will be
             the hexadecimal representation of a UUID4.
         :param experiment_name: name of the associated experiment.  Defaults to
             ``"runs"``.
-        :param kwargs: keyword arguments can contain MongoDB connection
-            parameters.  These keyword arguments will be forwarded to
+        :param mongo_options: dictionary used to pass arguments to
             ``MongoClient``.
         """
         self.id = id
         if self.id is None:
             self.id = uuid4().hex
         self.experiment_name = experiment_name
-        self.mongo_kwargs = kwargs
+        self.mongo_options = mongo_options
         self._dirty = True
         self._data = None
         self._started = False
@@ -65,7 +67,7 @@ class Run:
         """
         Returns the ``Experiment`` where this ``Run`` is stored.
         """
-        return Experiment(name=self.experiment_name, **self.mongo_kwargs)
+        return Experiment(name=self.experiment_name, **self.mongo_options)
 
     @property
     def data(self) -> Dict[str, Any]:

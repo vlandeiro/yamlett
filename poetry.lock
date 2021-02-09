@@ -87,20 +87,6 @@ optional = false
 python-versions = ">=3.6, <3.7"
 
 [[package]]
-name = "fastcore"
-version = "1.3.10"
-description = "Python supercharged for fastai development"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-packaging = "*"
-
-[package.extras]
-dev = ["numpy", "nbdev (>=0.2.39)", "matplotlib", "pillow", "torch", "pandas"]
-
-[[package]]
 name = "flake8"
 version = "3.8.4"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -190,7 +176,7 @@ python-versions = "*"
 name = "packaging"
 version = "20.7"
 description = "Core utilities for Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -265,7 +251,7 @@ zstd = ["zstandard"]
 name = "pyparsing"
 version = "2.4.7"
 description = "Python parsing module"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
@@ -398,7 +384,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "477e0063f7e341d967b3d521c751fd3ae90d29c994297f316f5db43e818239b6"
+content-hash = "dc0a8201246d95681df91d207c817f16dfeca7aba56713cc1cc07d2c7e40e149"
 
 [metadata.files]
 appdirs = [
@@ -463,10 +449,6 @@ coverage = [
 dataclasses = [
     {file = "dataclasses-0.8-py3-none-any.whl", hash = "sha256:0201d89fa866f68c8ebd9d08ee6ff50c0b255f8ec63a71c16fda7af82bb887bf"},
     {file = "dataclasses-0.8.tar.gz", hash = "sha256:8479067f342acf957dc82ec415d355ab5edb7e7646b90dc6e2fd1d96ad084c97"},
-]
-fastcore = [
-    {file = "fastcore-1.3.10-py3-none-any.whl", hash = "sha256:17568c2f2986746c33f76b78afff43f542dec10df09f593ebd8c8874dd3f6473"},
-    {file = "fastcore-1.3.10.tar.gz", hash = "sha256:40d6254f082582013d8f01b3693cb66210a1330e1bfbcbd8b95c13a8ce8fea98"},
 ]
 flake8 = [
     {file = "flake8-3.8.4-py2.py3-none-any.whl", hash = "sha256:749dbbd6bfd0cf1318af27bf97a14e28e5ff548ef8e5b1566ccfb25a11e7c839"},
