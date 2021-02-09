@@ -9,7 +9,7 @@ from yamlett.utils_test import nullcontext
 
 
 @pytest.mark.parametrize(
-    "name, kwargs, patch, context",
+    "name, mongo_options, patch, context",
     [
         ("runs", {}, mongomock.patch(), None),
         ("other_db", {}, mongomock.patch(), None),
@@ -27,11 +27,11 @@ from yamlett.utils_test import nullcontext
         ),
     ],
 )
-def test_experiment(name, kwargs, patch, context):
+def test_experiment(name, mongo_options, patch, context):
     context = context or nullcontext()
     with context:
         with patch:
-            experiment = Experiment(name=name, **kwargs)
+            experiment = Experiment(name=name, mongo_options=mongo_options)
             obj = {"_id": 1, "value": 1234}
             experiment.insert_one(obj)
             assert experiment.find_one({"_id": 1}) == obj
@@ -43,19 +43,20 @@ def test_experiment(name, kwargs, patch, context):
 
 def helper_validate_run_data(result: Dict[str, Any]):
     assert "_id" in result.keys()
-    assert {"created_at", "last_modified_at"} <= set(result["_yamlett"].keys())
+    # assert {"created_at", "last_modified_at"} <= set(result["_yamlett"].keys())
 
 
 @pytest.mark.parametrize(
-    "experiment_name, kwargs, patch, context", [("runs", {}, mongomock.patch(), None)]
+    "experiment_name, mongo_options, patch, context",
+    [("runs", {}, mongomock.patch(), None)],
 )
-def test_run_start_stop(experiment_name, kwargs, patch, context):
+def test_run_start_stop(experiment_name, mongo_options, patch, context):
     context = context or nullcontext()
 
     with context:
         with patch:
             # initialize run
-            run = Run(experiment_name=experiment_name, **kwargs)
+            run = Run(experiment_name=experiment_name, mongo_options=mongo_options)
             assert run._data is None
             assert run._dirty
 
@@ -65,33 +66,33 @@ def test_run_start_stop(experiment_name, kwargs, patch, context):
 
             # retrieve twice to check caching works okay
             for i in range(2):
-                helper_validate_run_data(run.data)
+                helper_validate_run_data(run.data())
                 assert not run._dirty
-                assert "value" in run.data.keys()
-                assert run.data["value"] == 1234
+                assert "value" in run.data().keys()
+                assert run.data()["value"] == 1234
 
             # add another value by creating a list
             run.store("other", 1, push=True)
             assert run._dirty
 
-            helper_validate_run_data(run.data)
+            helper_validate_run_data(run.data())
             assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1]
+            assert "value" in run.data().keys()
+            assert run.data()["value"] == 1234
+            assert "other" in run.data().keys()
+            assert run.data()["other"] == [1]
 
             run.store("other", 2, push=True)
             assert run._dirty
 
-            helper_validate_run_data(run.data)
+            helper_validate_run_data(run.data())
             assert not run._dirty
-            assert "value" in run.data.keys()
-            assert run.data["value"] == 1234
-            assert "other" in run.data.keys()
-            assert run.data["other"] == [1, 2]
+            assert "value" in run.data().keys()
+            assert run.data()["value"] == 1234
+            assert "other" in run.data().keys()
+            assert run.data()["other"] == [1, 2]
 
             # validate the run one more time but make sure we have the
             # information about finishing time
-            helper_validate_run_data(run.data)
+            helper_validate_run_data(run.data())
             assert not run._dirty
