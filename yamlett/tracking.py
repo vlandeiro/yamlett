@@ -5,6 +5,7 @@ from uuid import uuid4
 import pymongo
 from fastcore.meta import delegates
 from pymongo.errors import DuplicateKeyError
+from box import Box
 
 
 class Experiment:
@@ -74,7 +75,7 @@ class Run:
         if self._dirty:
             self._data = self.experiment.find_one({"_id": self.id})
             self._dirty = False
-        return self._data
+        return Box(self._data)
 
     def _start(self):
         """
