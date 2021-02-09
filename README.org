@@ -297,9 +297,13 @@ e.find(
   + needs mongodb instance
 - [X] Add docstrings
 - [X] Allow dotted notation for returned data
-- [ ] Enable artifacts to be stored on disk or in cloud storage
-  + Let users provide an object that supports =open=, =write=, and =read= and
-    interacts with the file system
+- [-] Enable artifacts to be stored on disk or in cloud storage
+  + [X] Let users provide an object that supports =open=, =write=, and =read=
+    and interacts with the file system
+  + [X] provide ~data(resolve: bool)~ function
+  + [X] store the data writer as a pickled object in mongodb
+  + [ ] add tests
+
 - [ ] Add e2e runnable example
 - [ ] Use environment variables to define MongoDB parameters
 - [ ] publish documentation through rtd or github pages
