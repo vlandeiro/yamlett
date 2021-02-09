@@ -39,6 +39,17 @@ class Run:
         experiment_name: str = "runs",
         **kwargs,
     ):
+        """Creates a new Run or points to an existing Run if the provided ``id``
+        already exists.
+
+        :param id: unique ID for the Run object.  If ``None``, the ID will be
+            the hexadecimal representation of a UUID4.
+        :param experiment_name: name of the associated experiment.  Defaults to
+            ``"runs"``.
+        :param kwargs: keyword arguments can contain MongoDB connection
+            parameters.  These keyword arguments will be forwarded to
+            ``MongoClient``.
+        """
         self.id = id
         if self.id is None:
             self.id = uuid4().hex
@@ -50,17 +61,25 @@ class Run:
 
     @property
     def experiment(self) -> Experiment:
+        """
+        Returns the ``Experiment`` where this ``Run`` is stored.
+        """
         return Experiment(name=self.experiment_name, **self.mongo_kwargs)
 
     @property
     def data(self) -> Dict[str, Any]:
+        """
+        Returns the data stored by this ``Run``.
+        """
         if self._dirty:
             self._data = self.experiment.find_one({"_id": self.id})
             self._dirty = False
         return self._data
 
     def _start(self):
-        # insert a new document storing the run id and the creation time
+        """
+        Starts or resume a ``Run``.
+        """
         try:
             doc = {"_id": self.id, "_yamlett": {"created_at": datetime.now()}}
             self.experiment.insert_one(doc)
@@ -75,6 +94,21 @@ class Run:
         value: Union[Any, Dict[str, Any]],
         push: bool = False,
     ):
+        """
+        Stores a given ``value`` under the given ``key``.
+
+        :param key: String to use to uniquely identify the path to store the
+            ``value``.  Dots (``.``) can be used to access deeper levels in your
+            object.  For example, the key ``model.parameters.regularization``
+            points to the ``regularization`` key under ``parameters`` under
+            ``model``.
+        :param value: Value to store under the given ``key``.
+        :param push: Boolean set to ``True`` to append the ``value`` to an
+            existing list under ``key``.  For instance, if ``[1,2,3]`` is
+            already stored under the key ``my_list``, then calling
+            ``run.store("my_list", 4, push=True)`` will result in the list
+            ``[1,2,3,4]``.
+        """
         if not self._started:
             self._start()
 
