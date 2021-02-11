@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Union, Tuple, List
+from typing import Any, Dict, Optional, Union, Tuple, List, TYPE_CHECKING
 from uuid import uuid4
 from pathlib import Path
 
@@ -7,6 +7,9 @@ import pymongo
 from pymongo.errors import DuplicateKeyError
 from box import Box
 import cloudpickle as pickle
+
+if TYPE_CHECKING:
+    from cloudpathlib import CloudPath
 
 
 class Experiment:
@@ -76,6 +79,7 @@ class Run:
 
         self._dirty = True
         self._data = None
+        self._resolved = False
         self._start()
 
     @property
@@ -89,15 +93,31 @@ class Run:
         """
         Returns the data stored by this ``Run``.
         """
-        if self._dirty:
+        if self._dirty or self._resolved != resolve:
             data = self.experiment.find_one({"_id": self.id})
             del data["_yamlett"]
             self._data = data
             self._dirty = False
+            self._resolved = resolve
             if resolve:
                 self._data = self._resolve_data(self._data)
         if self._data:
             return Box(self._data)
+
+    @staticmethod
+    def _resolve_path(path: str) -> "Union[Path, CloudPath]":
+        if path.startswith("/"):  # local file
+            return Path(path)
+        else:
+            try:
+                from cloudpathlib import CloudPath
+
+                return CloudPath(path)
+            except ImportError:
+                raise RuntimeError(
+                    "You must install yamlett with the 'cloud' extras"
+                    f" to load the Run with data stored in {path}."
+                )
 
     def _resolve_data(
         self, data: Union[Tuple, List, Dict[str, Any]], parts: Optional[str] = None
@@ -119,17 +139,22 @@ class Run:
         Starts or resume a ``Run``.
         """
         try:
+            path = self.path
+            if hasattr(path, "resolve"):  # only works for a local path
+                path = path.resolve()
             doc = {
                 "_id": self.id,
                 "_yamlett": {
                     "created_at": datetime.now(),
-                    "path": pickle.dumps(self.path.resolve()),
+                    "path": str(path),
                 },
             }
             self.experiment.insert_one(doc)
+
         except DuplicateKeyError:  # resume the run
             run_data = Box(self.experiment.find_one({"_id": self.id}))
-            self.path = pickle.loads(run_data._yamlett.path)
+            self.path = self._resolve_path(run_data._yamlett.path)
+
         self._dirty = True
         self._started = True
 
