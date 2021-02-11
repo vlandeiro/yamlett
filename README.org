@@ -303,6 +303,7 @@ e.find(
   + [X] provide ~data(resolve: bool)~ function
   + [X] store the data writer as a pickled object in mongodb
   + [ ] add tests
+  + [ ] update README (run.data -> run.data())
 
 - [ ] Add e2e runnable example
 - [ ] Use environment variables to define MongoDB parameters
