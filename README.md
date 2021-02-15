@@ -2,7 +2,7 @@
 
 1.  [What is `yamlett`?](#what-is-yamlett)
 2.  [Installation](#installation)
-3.  [Getting started](#org7e0759d)
+3.  [Getting started](#orga5e1a3b)
 4.  [Example](#example)
     1.  [Set up the experiment](#set-up-experiment)
     2.  [MLflow-like tracking](#mlflow-like-tracking)
@@ -42,11 +42,11 @@ pip install yamlett
 It also requires a MongoDB instance that you can connect to. If you don&rsquo;t have one and just want to try out `yamlett`, we provide a [docker compose file](docker-compose.yaml) that starts a MongoDB instance available at `localhost:27017` (along with instances of [Presto](https://prestodb.io) and [Metabase](https://www.metabase.com)).
 
 
-<a id="org7e0759d"></a>
+<a id="orga5e1a3b"></a>
 
 ## Getting started
 
-In `yamlett`, `MongoClient` [connection parameters](https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient) can be passed as keyword arguments in both `Run` and `Experiment` to specify what MongoDB instance you want to connect to. If you don&rsquo;t pass anything, the default arguments (`localhost:27017`) will be used. If you have a custom MongoDB instance, you can specify its `host` and `port` when creating a `Run` using `run = Run(host="mymongo.host.com", port=27017)`.
+In `yamlett`, `MongoClient` [connection parameters](https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient) can be passed as keyword arguments in both `Run` and `Experiment` to specify what MongoDB instance you want to connect to. If you don&rsquo;t pass anything, the default arguments (`localhost:27017`) will be used. If you have a custom MongoDB instance, you can specify its `host` and `port` when creating a `Run` using .
 
 
 <a id="example"></a>
@@ -62,7 +62,7 @@ In this section, we compare the same model run but with two different tracking d
 
 First, let&rsquo;s load a dataset for a simple classification problem that ships with scikit-learn.
 
-```python
+```jupyter-python
 from sklearn.datasets import load_iris
 
 X, y = load_iris(return_X_y=True)
@@ -70,7 +70,7 @@ X, y = load_iris(return_X_y=True)
 
 Then, we create a logistic regression model and train that model on the iris dataset, increasing the number of iterations and changing the regularization strength.
 
-```python
+```jupyter-python
 from sklearn.linear_model import LogisticRegression
 
 model = LogisticRegression(max_iter=200, C=0.1)
@@ -84,11 +84,11 @@ model.fit(X, y)
 
 With `yamlett`, you are free to organize you tracking information so you could decide to store it using a &ldquo;flat&rdquo; approach similar to MLflow where each key has an associated value and there can be no nesting.
 
-```python
+```jupyter-python
 from yamlett import Run
 from sklearn.metrics import f1_score
 
-run = Run()
+run = Run(id="mlflow-like-run")
 
 # store some information about your trained model: its class and its parameters
 run.store("params_model_class", model.__class__.__name__)
@@ -102,18 +102,17 @@ run.store("data_n_observations", X.shape[1])
 # store the F1 score on the train data
 run.store("metrics_train_f1_score", f1_score(y, model.predict(X), average="weighted"))
 
-# you could even store a pickled version of your model
-# run.store("model", pickle.dumps(model))
+# you can even store a pickled version of your model on disk
+run.store("model", model, pickled=True)
 ```
 
-After running this code, we can retrieve the stored information by calling `run.data`:
+After running this code, we can retrieve the stored information by calling `run.data(resolve=True)`:
 
-    {'_id': '901c6823493d429cae4ddb84c91a7768',
-     '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 21, 36, 14, 17000),
-                  'last_modified_at': datetime.datetime(2020, 12, 5, 21, 36, 14, 461000)},
+    {'_id': 'mlflow-like-run',
      'data_n_features': 150,
      'data_n_observations': 4,
      'metrics_train_f1_score': 0.9599839935974389,
+     'model': LogisticRegression(C=0.1, max_iter=200),
      'params_model_C': 0.1,
      'params_model_class': 'LogisticRegression',
      'params_model_class_weight': None,
@@ -140,11 +139,11 @@ This approach is straightforward: one scalar for each key in the document. Howev
 
 The method we propose in this package leverages Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let&rsquo;s see what it looks like using the same run as above:
 
-```python
+```jupyter-python
 from yamlett import Run
 from sklearn.metrics import f1_score
 
-run = Run()
+run = Run(id="yamlett-run")
 
 # store your model information
 model_info = {
@@ -159,18 +158,17 @@ run.store("data", {"n_features": X.shape[0], "n_observations": X.shape[1]})
 # store the F1 score on your train data
 run.store("metrics.f1_score", f1_score(y, model.predict(X), average="weighted"))
 
-# you could even store a pickled version of your model
-# run.store("model.artifact", pickle.dumps(model))
+# you can even store a pickled version of your model on disk
+run.store("model.artifact", model, pickled=True)
 ```
 
-Once again, let&rsquo;s call `run.data` and see what information we stored:
+Once again, let&rsquo;s call `run.data(resolve=True)` and see what information we stored:
 
-    {'_id': 'b7736c7b3cc3439ca379e3e6a2b6d9b8',
-     '_yamlett': {'created_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 446000),
-                  'last_modified_at': datetime.datetime(2020, 12, 5, 22, 43, 2, 529000)},
-     'data': {'n_features': 150, 'n_observations': 4},
-     'metrics': {'f1_score': 0.9599839935974389},
-     'model': {'class': 'LogisticRegression',
+    {'_id': 'yamlett-run',
+     'data': <Box: {'n_features': 150, 'n_observations': 4}>,
+     'metrics': <Box: {'f1_score': 0.9599839935974389}>,
+     'model': {'artifact': LogisticRegression(C=0.1, max_iter=200),
+               'class': 'LogisticRegression',
                'params': {'C': 0.1,
                           'class_weight': None,
                           'dual': False,
@@ -187,9 +185,9 @@ Once again, let&rsquo;s call `run.data` and see what information we stored:
                           'verbose': 0,
                           'warm_start': False}}}
 
-The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are `data`, `metrics`, and `model` and we argue this makes it easier to find information than with long keys in a flat dictionary. For instance, you may want to look at all the metrics for a given run using `run.data["metrics"]`.
+The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are `data`, `metrics`, and `model` making it easier to find information than with long keys in a flat dictionary. For instance, you may want to look at all the metrics for a given run using `run.data()["metrics"]`.
 
-    {'f1_score': 0.9599839935974389}
+    <Box: {'f1_score': 0.9599839935974389}>
 
 Note that `yamlett` does not impose the document hierarchy so you are free to organize your run data as you see fit. Additionally, because `yamlett` is a light abstraction layer on top of MongoDB, you can query runs in an `Experiment` using `find` or `aggregate`. For example, we can retrieve all runs in the default experiment for which:
 
@@ -197,7 +195,7 @@ Note that `yamlett` does not impose the document hierarchy so you are free to or
 2.  on a dataset with at least 3000 data points
 3.  that yielded an F1 score of at least 0.9
 
-```python
+```jupyter-python
 from yamlett import Experiment
 
 e = Experiment()
