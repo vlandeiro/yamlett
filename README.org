@@ -58,18 +58,21 @@ In =yamlett=, ~MongoClient~ [[https://pymongo.readthedocs.io/en/stable/api/pymon
 arguments in both =Run= and =Experiment= to specify what MongoDB instance you
 want to connect to. If you don't pass anything, the default arguments
 (=localhost:27017=) will be used. If you have a custom MongoDB instance, you can
-specify its ~host~ and ~port~ when creating a =Run= using src_python[:eval no
-:export code]{run = Run(host="mymongo.host.com", port=27017)}.
+specify its ~host~ and ~port~ when creating a =Run= using ~run =
+Run(host="mymongo.host.com", port=27017)~. Once you have an run instantiated,
+you can store a key/value pair with ~run.store(key, value)~ and you can look at
+the stored data with ~run.data~.
 
-** Example
+** Examples
 :PROPERTIES:
 :CUSTOM_ID: example
 :END:
 
+*** MLflow vs yamlett
 In this section, we compare the same model run but with two different tracking
 different approaches: MLflow-like vs yamlett.
 
-*** Set up the experiment
+**** Set up the experiment
 :PROPERTIES:
 :CUSTOM_ID: set-up-experiment
 :END:
@@ -99,7 +102,7 @@ model.fit(X, y)
 #+RESULTS:
 : LogisticRegression(C=0.1, max_iter=200)
 
-*** MLflow-like tracking
+**** MLflow-like tracking
 :PROPERTIES:
 :CUSTOM_ID: mlflow-like-tracking
 :END:
@@ -175,7 +178,7 @@ confusing if chosen incorrectly: is it =params/model/fit_intercept= or
 =params/model_fit/intercept=? It is also more work than needed when information
 already comes nicely organized (e.g. =model.get_params()=).
 
-*** =yamlett= tracking
+**** =yamlett= tracking
 :PROPERTIES:
 :CUSTOM_ID: yamlett-like-tracking
 :END:
@@ -281,6 +284,16 @@ e.find(
 : <pymongo.cursor.Cursor at 0x7fb9935e3a50>
 
 
+*** Storing large artifacts
+MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size][maximum document size of 16MB]]. This means that storing large
+models or outputs along with the run information is not directly possible.
+=yamlett= still lets you do that with ~run.store(key, value, pickled=True)~.
+When ~pickled~ is set to ~True~, the passed ~value~ is not directly stored in
+MongoDB but it is pickled and stored "on disk". By default, your ~run~ object
+will store such pickled values in a =.yamlett= folder in the current working
+directory. However, you can change this by specifying a ~path~ when you
+instantiate your ~Run~: this path can be a local path or a cloud-based path.
+
 * Roadmap [11/17] :noexport:
 
 - [X] Add basic unit tests
@@ -302,6 +315,8 @@ e.find(
   + [X] provide ~data(resolve: bool)~ function
   + [X] store the data writer as a pickled object in mongodb
   + [X] update README (run.data -> run.data())
+  + [ ] automatically parse AWS, GCS, and Azure URLs rather than passing a
+    cloudpathlib client
   + [ ] add tests
 - [X] Add e2e runnable example
 - [ ] add example storing a large artifact locally
