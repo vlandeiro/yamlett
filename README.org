@@ -21,47 +21,28 @@
 
 It has a simple interface with only two primitives: =Run= and =Experiment=.
 
-- A =Run= is used to store information about one iteration of your =Experiment=.
-  You can use it to record any ([[http://bsonspec.org][BSON]]-serializable) information you want such as
-  model parameters, metrics, or pickled artifacts.
-- An =Experiment= is a collection of =Run= objects. It has a =name= and it is a
-  wrapper around a =pymongo.collection.Collection= object ([[https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection][reference]]), meaning
-  that you can query it using =find= or =aggregate=. Think of it as a way to
-  collect all the modeling iterations for a specific project.
+- A =Run= is used to store information about one iteration of your =Experiment=. You can use it to record any ([[http://bsonspec.org][BSON]]-serializable) information you want such as model parameters, metrics, or pickled artifacts.
+- An =Experiment= is a collection of =Run= objects. It has a =name= and it is a wrapper around a =pymongo.collection.Collection= object ([[https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection][reference]]), meaning that you can query it using =find= or =aggregate=. Think of it as a way to collect all the modeling iterations for a specific project.
 
-The main difference with other tracking tools (e.g. MLflow) is that =yamlett=
-lets you save complex structured information using dictionaries or lists and
-filter on them later using MongoDB queries.
+The main difference with other tracking tools (e.g. MLflow) is that =yamlett= lets you save complex structured information using dictionaries or lists and filter on them later using MongoDB queries.
 
-=yamlett= is particularly useful if your experiments are configuration-driven.
-Once your configuration is loaded as a python object, storing it is as easy as
-~run.store("config", config)~.
+=yamlett= is particularly useful if your experiments are configuration-driven. Once your configuration is loaded as a python object, storing it is as easy as ~run.store("config", config)~.
 
 ** Installation
 :PROPERTIES:
 :CUSTOM_ID: installation
 :END:
-
 =yamlett= can be installed with ~pip~:
+
 #+begin_src sh :eval no
 pip install yamlett
 #+end_src
 
-It also requires a MongoDB instance that you can connect to. If you don't have
-one and just want to try out =yamlett=, we provide a [[file:docker-compose.yaml][docker compose file]] that
-starts a MongoDB instance available at =localhost:27017= (along with instances
-of [[https://prestodb.io][Presto]] and [[https://www.metabase.com][Metabase]]).
+It also requires a MongoDB instance that you can connect to. If you don't have one and just want to try out =yamlett=, we provide a [[file:docker-compose.yaml][docker compose file]] that starts a MongoDB instance available at =localhost:27017= (along with instances of [[https://prestodb.io][Presto]] and [[https://www.metabase.com][Metabase]]).
 
 ** Getting started
 
-In =yamlett=, ~MongoClient~ [[https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient][connection parameters]] can be passed as keyword
-arguments in both =Run= and =Experiment= to specify what MongoDB instance you
-want to connect to. If you don't pass anything, the default arguments
-(=localhost:27017=) will be used. If you have a custom MongoDB instance, you can
-specify its ~host~ and ~port~ when creating a =Run= using ~run =
-Run(host="mymongo.host.com", port=27017)~. Once you have an run instantiated,
-you can store a key/value pair with ~run.store(key, value)~ and you can look at
-the stored data with ~run.data~.
+In =yamlett=, ~MongoClient~ [[https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient][connection parameters]] can be passed as keyword arguments in both =Run= and =Experiment= to specify what MongoDB instance you want to connect to. If you don't pass anything, the default arguments (=localhost:27017=) will be used. If you have a custom MongoDB instance, you can specify its ~host~ and ~port~ when creating a =Run= using ~run=Run(host="mymongo.host.com", port=27017)~. Once you have a run instantiated, you can store a key/value pair with ~run.store(key, value)~ and you can look at the stored data with ~run.data~.
 
 ** Examples
 :PROPERTIES:
@@ -69,16 +50,14 @@ the stored data with ~run.data~.
 :END:
 
 *** MLflow vs yamlett
-In this section, we compare the same model run but with two different tracking
-different approaches: MLflow-like vs yamlett.
+In this section, we compare the same model run but with two different tracking different approaches: MLflow-like vs yamlett.
 
 **** Set up the experiment
 :PROPERTIES:
 :CUSTOM_ID: set-up-experiment
 :END:
 
-First, let's load a dataset for a simple classification problem that ships with
-scikit-learn.
+First, let's load a dataset for a simple classification problem that ships with scikit-learn.
 
 #+begin_src jupyter-python
 from sklearn.datasets import load_iris
@@ -88,9 +67,7 @@ X, y = load_iris(return_X_y=True)
 
 #+RESULTS:
 
-Then, we create a logistic regression model and train that model on the iris
-dataset, increasing the number of iterations and changing the regularization
-strength.
+Then, we create a logistic regression model and train that model on the iris dataset, increasing the number of iterations and changing the regularization strength.
 
 #+begin_src jupyter-python
 from sklearn.linear_model import LogisticRegression
@@ -107,9 +84,7 @@ model.fit(X, y)
 :CUSTOM_ID: mlflow-like-tracking
 :END:
 
-With =yamlett=, you are free to organize you tracking information so you could
-decide to store it using a "flat" approach similar to MLflow where each key has
-an associated value and there can be no nesting.
+With =yamlett=, you are free to organize you tracking information so you could decide to store it using a "flat" approach similar to MLflow where each key has an associated value and there can be no nesting.
 
 #+begin_src jupyter-python
 from yamlett import Run
@@ -136,8 +111,7 @@ run.store("model", model, pickled=True)
 #+RESULTS:
 # [goto error]
 
-After running this code, we can retrieve the stored information by calling
-~run.data(resolve=True)~:
+After running this code, we can retrieve the stored information by calling ~run.data(resolve=True)~:
 
 #+begin_src jupyter-python :exports results :display plain :results scalar
 from pprint import pprint
@@ -170,22 +144,14 @@ pprint(run.data(resolve=True))
  'params_model_warm_start': False}
 #+end_example
 
-This approach is straightforward: one scalar for each key in the document.
-However, one downside is that you need to maintain your own namespace
-convention. For example here, we used underscores to separate the different
-levels of information (params, data, metrics, etc) but this can quickly get
-confusing if chosen incorrectly: is it =params/model/fit_intercept= or
-=params/model_fit/intercept=? It is also more work than needed when information
-already comes nicely organized (e.g. =model.get_params()=).
+This approach is straightforward: one scalar for each key in the document. However, one downside is that you need to maintain your own namespace convention. For example here, we used underscores to separate the different levels of information (params, data, metrics, etc) but this can quickly get confusing if chosen incorrectly: is it =params/model/fit_intercept= or =params/model_fit/intercept=? It is also more work than needed when information already comes nicely organized (e.g. =model.get_params()=).
 
 **** =yamlett= tracking
 :PROPERTIES:
 :CUSTOM_ID: yamlett-like-tracking
 :END:
 
-The method we propose in this package leverages Python dictionaries / NoSQL DB
-documents to automatically store your information in a structured way. Let's see
-what it looks like using the same run as above:
+The method we propose in this package leverages Python dictionaries / NoSQL DB documents to automatically store your information in a structured way. Let's see what it looks like using the same run as above:
 
 #+begin_src jupyter-python
 from yamlett import Run
@@ -244,11 +210,7 @@ pprint(run.data(resolve=True))
                       'warm_start': False}}}
 #+end_example
 
-The run information is now stored in a document that can be easily parsed based
-on its structure. The top level keys of the document are =data=, =metrics=, and
-=model= making it easier to find information than with long keys in a flat
-dictionary. For instance, you may want to look at all the metrics for a given
-run using ~run.data()["metrics"]~.
+The run information is now stored in a document that can be easily parsed based on its structure. The top level keys of the document are =data=, =metrics=, and =model= making it easier to find information than with long keys in a flat dictionary. For instance, you may want to look at all the metrics for a given run using ~run.data()["metrics"]~.
 
 #+begin_src jupyter-python :exports results
 pprint(run.data()["metrics"])
@@ -257,11 +219,7 @@ pprint(run.data()["metrics"])
 #+RESULTS:
 : <Box: {'f1_score': 0.9599839935974389}>
 
-Note that =yamlett= does not impose the document hierarchy so you are free to
-organize your run data as you see fit. Additionally, because =yamlett= is a
-light abstraction layer on top of MongoDB, you can query runs in an =Experiment=
-using =find= or =aggregate=. For example, we can retrieve all runs in the
-default experiment for which:
+Note that =yamlett= does not impose the document hierarchy so you are free to organize your run data as you see fit. Additionally, because =yamlett= is a light abstraction layer on top of MongoDB, you can query runs in an =Experiment= using =find= or =aggregate=. For example, we can retrieve all runs in the default experiment for which:
 1. the model was fit with a bias term
 2. on a dataset with at least 3000 data points
 3. that yielded an F1 score of at least 0.9
@@ -283,49 +241,49 @@ e.find(
 #+RESULTS:
 : <pymongo.cursor.Cursor at 0x7fb9935e3a50>
 
-
 *** Storing large artifacts
-MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size][maximum document size of 16MB]]. This means that storing large
-models or outputs along with the run information is not directly possible.
-=yamlett= still lets you do that with ~run.store(key, value, pickled=True)~.
-When ~pickled~ is set to ~True~, the passed ~value~ is not directly stored in
-MongoDB but it is pickled and stored "on disk". By default, your ~run~ object
-will store such pickled values in a =.yamlett= folder in the current working
-directory. However, you can change this by specifying a ~path~ when you
-instantiate your ~Run~: this path can be a local path or a cloud-based path.
+MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size][maximum document size of 16MB]]. This means that storing large models or outputs along with the run information is not directly possible. =yamlett= still lets you do that with ~run.store(key, value, pickled=True)~. When ~pickled~ is set to ~True~, the passed ~value~ is not directly stored in MongoDB but it is pickled and stored "on disk". By default, your ~run~ object will store such pickled values in a =.yamlett= folder in the current working directory. However, you can change this by specifying a ~path~ when you instantiate your ~Run~: this path can be a local path or a cloud-based path.
 
-* Roadmap [11/17] :noexport:
+* Roadmap [11/18] :noexport:
+#+begin: org-ql :query "todo: "
+| Heading                                                   | Todo | P |
+|-----------------------------------------------------------+------+---|
+| [[Enable artifacts to be stored on disk or in cloud storage][Enable artifacts to be stored on disk or in cloud storage]] | [-]  |   |
+| [[add example storing a large artifact locally][add example storing a large artifact locally]]              | [ ]  |   |
+| [[add example storing a large artifact using GCS][add example storing a large artifact using GCS]]            | [ ]  |   |
+| [[Use environment variables to define MongoDB parameters][Use environment variables to define MongoDB parameters]]    | [ ]  |   |
+| [[publish documentation through rtd or github pages][publish documentation through rtd or github pages]]         | [ ]  |   |
+| [[Add example for connecting to Metabase and Presto][Add example for connecting to Metabase and Presto]]         | [ ]  |   |
+#+end
 
-- [X] Add basic unit tests
-- [X] Add tests across python version using tox
+** [X] Add basic unit tests
+** [X] Add tests across python version using tox
   + tox replaced by Github Actions
-- [X] Add CI
-- [X] Add CD
-- [X] Release 0.0.1 to github
-- [X] Release to pypi
-- [X] add description to pypi release
-- [X] add installation guide
+** [X] Add CI
+** [X] Add CD
+** [X] Release 0.0.1 to github
+** [X] Release to pypi
+** [X] add description to pypi release
+** [X] add installation guide
   + ~pip install~
   + needs mongodb instance
-- [X] Add docstrings
-- [X] Allow dotted notation for returned data
-- [-] Enable artifacts to be stored on disk or in cloud storage
-  + [X] Let users provide an object that supports =open=, =write=, and =read=
+** [X] Add docstrings
+** [X] Allow dotted notation for returned data
+** [ ] Enable artifacts to be stored on disk or in cloud storage
+- [X] Let users provide an object that supports =open=, =write=, and =read=
     and interacts with the file system
-  + [X] provide ~data(resolve: bool)~ function
-  + [X] store the data writer as a pickled object in mongodb
-  + [X] update README (run.data -> run.data())
-  + [ ] automatically parse AWS, GCS, and Azure URLs rather than passing a
-    cloudpathlib client
-  + [ ] add tests
-- [X] Add e2e runnable example
-- [ ] add example storing a large artifact locally
-- [ ] add example storing a large artifact using GCS
-- [ ] Use environment variables to define MongoDB parameters
-- [ ] publish documentation through rtd or github pages
-- [ ] Add example for connecting to Metabase and Presto
-  + metabase allows connecting to an instance of mongodb and query data
-  + sql is more common so we can plug presto on top of mongodb and link metabase
-    to presto
-  + caveat that the schema cannot change when using Presto: ie no new fields in
-    new runs
+- [X] provide ~data(resolve: bool)~ function
+- [X] store the data writer as a pickled object in mongodb
+- [X] update README (run.data -> run.data())
+- [ ] automatically parse AWS, GCS, and Azure URLs rather than passing a cloudpathlib client
+- [ ] add tests
+** [X] Add e2e runnable example
+** [ ] add example storing a large artifact locally :doc:
+** [ ] add example storing a large artifact using GCS :doc:
+** [ ] Use environment variables to define MongoDB parameters :feature:mongo:
+** [ ] publish documentation through rtd or github pages :doc:
+** [ ] Add example for connecting to Metabase and Presto :doc:
+- metabase allows connecting to an instance of mongodb and query data
+- sql is more common so we can plug presto on top of mongodb and link metabase to presto
+- caveat that the schema cannot change when using Presto: ie no new fields in new runs
+** [ ] Implement compatibility with MLflow tracking API :feature:mlflow:
