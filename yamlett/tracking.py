@@ -1,15 +1,14 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Union, Tuple, List, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
-from pathlib import Path
 
-import pymongo
-from pymongo.errors import DuplicateKeyError
-from box import Box
 import cloudpickle as pickle
+import pymongo
+from box import Box
+from cloudpathlib import AnyPath
+from pymongo.errors import DuplicateKeyError
 
-if TYPE_CHECKING:
-    from cloudpathlib import CloudPath
+YAMLETT_KEY = "__yamlett__"
 
 
 class Experiment:
@@ -47,7 +46,7 @@ class Run:
         id: Optional[str] = None,
         experiment_name: str = "runs",
         mongo_options: Optional[Dict] = None,
-        path: Optional[Union[str, Path]] = ".yamlett",
+        path: Optional[str] = ".yamlett",
     ):
         """Creates a new Run or retrieves an existing Run if the provided ``id``
         already exists.
@@ -58,12 +57,11 @@ class Run:
             ``"runs"``.
         :param mongo_options: dictionary used to pass arguments to
             ``MongoClient``.
-        :param path: a string or a ``pathlib.Path``-compatible object pointing
-            to a directory where pickled objects will be stored.  This can be
-            used to write large objects to cloud storage (using the cloudpathlib
-            library) or to the local filesystem.  If a string is passed, then
-            yamlett will use ``pathlib.Path`` to make it compatible.  Defaults
-            to ``".yamlett"``.
+        :param path: a string pointing to a directory where pickled objects will
+            be stored.  This can be used to write large objects to cloud storage
+            (leveraging the ``cloudpathlib`` library) or to the local
+            filesystem.  If a string is passed, ``cloudpathlib.AnyPath`` will be
+            used to resolve the path.  Defaults to ``".yamlett"``.
         """
         self.id = id
         if self.id is None:
@@ -71,10 +69,7 @@ class Run:
         self.experiment_name = experiment_name
         self.mongo_options = mongo_options or {}
 
-        self.path = path
-        if isinstance(path, str):
-            self.path = Path(path)
-        self.path = self.path.joinpath(self.experiment_name, self.id)
+        self.path = AnyPath(path).joinpath(self.experiment_name, self.id)
         self.path.mkdir(parents=True, exist_ok=True)
 
         self._dirty = True
@@ -92,10 +87,13 @@ class Run:
     def data(self, resolve=False) -> Dict[str, Any]:
         """
         Returns the data stored by this ``Run``.
+
+        :param resolve: boolean indicating whether the data artifacts should be
+            resolved or not.  Defaults to False.
         """
         if self._dirty or self._resolved != resolve:
             data = self.experiment.find_one({"_id": self.id})
-            del data["_yamlett"]
+            del data[YAMLETT_KEY]
             self._data = data
             self._dirty = False
             self._resolved = resolve
@@ -105,26 +103,19 @@ class Run:
             return Box(self._data)
 
     @staticmethod
-    def _resolve_path(path: str) -> "Union[Path, CloudPath]":
-        if path.startswith("/"):  # local file
-            return Path(path)
-        else:
-            try:
-                from cloudpathlib import CloudPath
-
-                return CloudPath(path)
-            except ImportError:
-                raise RuntimeError(
-                    "You must install yamlett with the 'cloud' extras"
-                    f" to load the Run with data stored in {path}."
-                )
+    def _is_yamlett_artifact(d: Dict):
+        return d.get(YAMLETT_KEY, {}).get("pickled", False)
 
     def _resolve_data(
         self, data: Union[Tuple, List, Dict[str, Any]], parts: Optional[str] = None
     ) -> Dict[str, Any]:
+        """
+        Recursively traverse the given data dictionary and loads yamlett
+        artifacts when encountered.
+        """
         parts = parts or []
         if isinstance(data, dict):
-            if data.get("_yamlett", {}).get("pickled", False):
+            if self._is_yamlett_artifact(data):
                 key = ".".join(parts)
                 filepath = self.path.joinpath(f"{key}.pkl")
                 with filepath.open("rb") as fd:
@@ -144,16 +135,16 @@ class Run:
                 path = path.resolve()
             doc = {
                 "_id": self.id,
-                "_yamlett": {
+                YAMLETT_KEY: {
                     "created_at": datetime.now(),
-                    "path": str(path),
+                    "path": path.as_uri(),
                 },
             }
             self.experiment.insert_one(doc)
 
         except DuplicateKeyError:  # resume the run
             run_data = Box(self.experiment.find_one({"_id": self.id}))
-            self.path = self._resolve_path(run_data._yamlett.path)
+            self.path = AnyPath(run_data[YAMLETT_KEY].path)
 
         self._dirty = True
         self._started = True
@@ -184,17 +175,17 @@ class Run:
             stored under
             ``self.path.cwd()``/``self.experiment.name``/``self.id``/``key``.pkl.
         """
+        if pickled and push:
+            raise ValueError("push and pickled cannot be set to True at the same time.")
+
         filter = {"_id": self.id}
         op = "$push" if push else "$set"
+
         if pickled:
-            if push:
-                raise ValueError(
-                    "push and pickled cannot be set to True at the same time."
-                )
             filepath = self.path.joinpath(f"{key}.pkl")
             with filepath.open("wb") as fd:
                 pickle.dump(value, fd)
-            update = {op: {f"{key}._yamlett.pickled": True}}
+            update = {op: {f"{key}.{YAMLETT_KEY}.pickled": True}}
         else:
             update = {op: {key: value}}
 
@@ -202,5 +193,5 @@ class Run:
         if update_result.modified_count == 0:
             raise ValueError(f"Updating operation failed: {update}")
         self._dirty = True
-        last_modified = {"$set": {"_yamlett.last_modified_at": datetime.now()}}
+        last_modified = {"$set": {f"{YAMLETT_KEY}.last_modified_at": datetime.now()}}
         self.experiment.update_one(filter, last_modified)
