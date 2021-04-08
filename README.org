@@ -244,7 +244,7 @@ e.find(
 *** Storing large artifacts
 MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size][maximum document size of 16MB]]. This means that storing models or outputs larger than 16MB along with the run information is not directly possible. =yamlett= still lets you do that with ~run.store(key, value, pickled=True)~. When ~pickled~ is set to ~True~, the ~value~ is not directly stored in MongoDB but it is pickled and stored "on disk". By default, your ~run~ object will store pickled objects in a =.yamlett= folder in the current working directory. However, you can change this by specifying a ~path~ when you instantiate your ~Run~: this path can be a local path or a cloud-based path (e.g. ~s3://bucket/experiment/~). Note that you will need to follow the [[https://cloudpathlib.drivendata.org/#installation][cloudpathlib installation instructions]] for your cloud provider before you can use =yamlett= to store large objects in the cloud.
 
-* Roadmap [11/20] :noexport:
+* Roadmap [12/20] :noexport:
 #+begin: org-ql :query "todo: "
 | Heading                                                   | Todo | P |
 |-----------------------------------------------------------+------+---|
@@ -255,6 +255,7 @@ MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-
 | [[publish documentation through rtd or github pages][publish documentation through rtd or github pages]]         | [ ]  |   |
 | [[Add example for connecting to Metabase and Presto][Add example for connecting to Metabase and Presto]]         | [ ]  |   |
 | [[Implement compatibility with MLflow tracking API][Implement compatibility with MLflow tracking API]]          | [ ]  |   |
+| [[Automatically detect when an object should be pickled][Automatically detect when an object should be pickled]]     | [ ]  |   |
 #+end
 
 ** [X] Add basic unit tests
@@ -289,7 +290,7 @@ MongoDB has a [[https://docs.mongodb.com/manual/reference/limits/#BSON-Document-
 - sql is more common so we can plug presto on top of mongodb and link metabase to presto
 - caveat that the schema cannot change when using Presto: ie no new fields in new runs
 ** [ ] Implement compatibility with MLflow tracking API :feature:mlflow:
-** [ ] Abstract artifact resolving away from tracking code :feature:artifacts:
+** [X] Abstract artifact resolving away from tracking code :feature:artifacts:
    - We could use a simple ~Artifact~ class that stores the path where the artifact is stored, a ~load~ method to abstract away ~cloudpickle~, and a static method predicate that tells us whether a dictionary is an ~Artifact~ or not.
 ** [ ] Automatically detect when an object should be pickled :feature:artifacts:
    - based on type?

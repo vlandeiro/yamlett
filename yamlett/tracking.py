@@ -2,11 +2,12 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
-import cloudpickle as pickle
 import pymongo
 from box import Box
 from cloudpathlib import AnyPath
 from pymongo.errors import DuplicateKeyError
+
+from .artifact import Artifact
 
 YAMLETT_KEY = "__yamlett__"
 
@@ -91,20 +92,19 @@ class Run:
         :param resolve: boolean indicating whether the data artifacts should be
             resolved or not.  Defaults to False.
         """
+        # Force-load the data if it has changed or if the user wants to see the
+        # data with/without artifacts and it's different than the last call
         if self._dirty or self._resolved != resolve:
-            data = self.experiment.find_one({"_id": self.id})
-            del data[YAMLETT_KEY]
-            self._data = data
-            self._dirty = False
-            self._resolved = resolve
-            if resolve:
-                self._data = self._resolve_data(self._data)
+            self._load_run_data(resolve=resolve)
         if self._data:
             return Box(self._data)
 
-    @staticmethod
-    def _is_yamlett_artifact(d: Dict):
-        return d.get(YAMLETT_KEY, {}).get("pickled", False)
+    def _load_run_data(self, resolve=False):
+        self._data = self.experiment.find_one({"_id": self.id}, {YAMLETT_KEY: False})
+        self._dirty = False
+        if resolve:
+            self._data = self._resolve_data(self._data)
+        self._resolved = resolve
 
     def _resolve_data(
         self, data: Union[Tuple, List, Dict[str, Any]], parts: Optional[str] = None
@@ -115,11 +115,9 @@ class Run:
         """
         parts = parts or []
         if isinstance(data, dict):
-            if self._is_yamlett_artifact(data):
-                key = ".".join(parts)
-                filepath = self.path.joinpath(f"{key}.pkl")
-                with filepath.open("rb") as fd:
-                    return pickle.load(fd)
+            if Artifact.is_artifact(data):
+                artifact = Artifact(path=self.path, key=".".join(parts))
+                return artifact.load()
             else:
                 return {k: self._resolve_data(v, parts + [k]) for k, v in data.items()}
         else:
@@ -129,20 +127,23 @@ class Run:
         """
         Starts or resume a ``Run``.
         """
+        # Try to start a new run
         try:
             path = self.path
             if hasattr(path, "resolve"):  # only works for a local path
                 path = path.resolve()
-            doc = {
-                "_id": self.id,
-                YAMLETT_KEY: {
-                    "created_at": datetime.now(),
-                    "path": path.as_uri(),
-                },
-            }
-            self.experiment.insert_one(doc)
+            self.experiment.insert_one(
+                {
+                    "_id": self.id,
+                    YAMLETT_KEY: {
+                        "created_at": datetime.now(),
+                        "path": path.as_uri(),
+                    },
+                }
+            )
 
-        except DuplicateKeyError:  # resume the run
+        # ... resume the run if it already exists
+        except DuplicateKeyError:
             run_data = Box(self.experiment.find_one({"_id": self.id}))
             self.path = AnyPath(run_data[YAMLETT_KEY].path)
 
@@ -170,28 +171,27 @@ class Run:
             the key ``my_list``, then calling ``run.store("my_list", 4,
             push=True)`` will result in the list ``[1,2,3,4]``.  Defaults to
             False.
-        :param pickled: set to ``True`` to cloudpickle the value and store it in
-            the file system specified by ``self.path``.  The pickle file will be
+        :param pickled: set to ``True`` to pickle the value and store it in the
+            file system specified by ``self.path``.  The pickle file will be
             stored under
             ``self.path.cwd()``/``self.experiment.name``/``self.id``/``key``.pkl.
         """
         if pickled and push:
-            raise ValueError("push and pickled cannot be set to True at the same time.")
+            raise ValueError("push and pickled cannot be True at the same time.")
 
-        filter = {"_id": self.id}
+        q = {"_id": self.id}
         op = "$push" if push else "$set"
 
         if pickled:
-            filepath = self.path.joinpath(f"{key}.pkl")
-            with filepath.open("wb") as fd:
-                pickle.dump(value, fd)
-            update = {op: {f"{key}.{YAMLETT_KEY}.pickled": True}}
+            artifact = Artifact(self.path, key, value)
+            artifact.save()
+            update = {op: repr(artifact)}
         else:
             update = {op: {key: value}}
 
-        update_result = self.experiment.update_one(filter, update)
+        update_result = self.experiment.update_one(q, update)
         if update_result.modified_count == 0:
             raise ValueError(f"Updating operation failed: {update}")
         self._dirty = True
         last_modified = {"$set": {f"{YAMLETT_KEY}.last_modified_at": datetime.now()}}
-        self.experiment.update_one(filter, last_modified)
+        self.experiment.update_one(q, last_modified)
