@@ -14,9 +14,7 @@ YAMLETT_KEY = "__yamlett__"
 
 class Experiment:
     def __init__(
-        self,
-        name: str = "runs",
-        mongo_options: Optional[Dict] = None,
+        self, name: str = "runs", mongo_options: Optional[Dict] = None,
     ):
         """Access a named ``Experiment`` that can be queried.
 
@@ -135,10 +133,7 @@ class Run:
             self.experiment.insert_one(
                 {
                     "_id": self.id,
-                    YAMLETT_KEY: {
-                        "created_at": datetime.now(),
-                        "path": path.as_uri(),
-                    },
+                    YAMLETT_KEY: {"created_at": datetime.now(), "path": path.as_uri(),},
                 }
             )
 
@@ -185,7 +180,7 @@ class Run:
         if pickled:
             artifact = Artifact(self.path, key, value)
             artifact.save()
-            update = {op: repr(artifact)}
+            update = {op: artifact.to_dict()}
         else:
             update = {op: {key: value}}
 

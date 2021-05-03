@@ -36,5 +36,5 @@ class Artifact:
                 "to save it to disk."
             )
 
-    def __repr__(self):
+    def to_dict(self):
         return {f"{self.key}.{self.MAGIC_KEY}": True}
