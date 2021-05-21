@@ -2,10 +2,10 @@
 
 1.  [What is `yamlett`?](#what-is-yamlett)
 2.  [Installation](#installation)
-3.  [Getting started](#org4c92758)
+3.  [Getting started](#org2761690)
 4.  [Examples](#example)
-    1.  [MLflow vs yamlett](#orgb32d187)
-    2.  [Storing large artifacts](#org827a623)
+    1.  [MLflow vs yamlett](#org8506a19)
+    2.  [Storing large artifacts](#org98f2b00)
 
 ![PyPI](https://img.shields.io/pypi/v/yamlett)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/yamlett)
@@ -41,7 +41,7 @@ pip install yamlett
 It also requires a MongoDB instance that you can connect to. If you don't have one and just want to try out `yamlett`, we provide a [docker compose file](docker-compose.yaml) that starts a MongoDB instance available at `localhost:27017` (along with instances of [Presto](https://prestodb.io) and [Metabase](https://www.metabase.com)).
 
 
-<a id="org4c92758"></a>
+<a id="org2761690"></a>
 
 ## Getting started
 
@@ -53,7 +53,7 @@ In `yamlett`, `MongoClient` [connection parameters](https://pymongo.readthedocs.
 ## Examples
 
 
-<a id="orgb32d187"></a>
+<a id="org8506a19"></a>
 
 ### MLflow vs yamlett
 
@@ -205,8 +205,8 @@ In this section, we compare the same model run but with two different tracking d
     ```
 
 
-<a id="org827a623"></a>
+<a id="org98f2b00"></a>
 
 ### Storing large artifacts
 
-MongoDB has a [maximum document size of 16MB](https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size). This means that storing large models or outputs along with the run information is not directly possible. `yamlett` still lets you do that with `run.store(key, value, pickled=True)`. When `pickled` is set to `True`, the passed `value` is not directly stored in MongoDB but it is pickled and stored "on disk". By default, your `run` object will store pickled objects in a `.yamlett` folder in the current working directory. However, you can change this by specifying a `path` when you instantiate your `Run`: this path can be a local path or a cloud-based path (e.g. `s3://bucket/experiment/`).
+MongoDB has a [maximum document size of 16MB](https://docs.mongodb.com/manual/reference/limits/#BSON-Document-Size). This means that storing models or outputs larger than 16MB along with the run information is not directly possible. `yamlett` still lets you do that with `run.store(key, value, pickled=True)`. When `pickled` is set to `True`, the `value` is not directly stored in MongoDB but it is pickled and stored "on disk". By default, your `run` object will store pickled objects in a `.yamlett` folder in the current working directory. However, you can change this by specifying a `path` when you instantiate your `Run`: this path can be a local path or a cloud-based path (e.g. `s3://bucket/experiment/`). Note that you will need to follow the [cloudpathlib installation instructions](https://cloudpathlib.drivendata.org/#installation) for your cloud provider before you can use `yamlett` to store large objects in the cloud.
