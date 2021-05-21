@@ -6,6 +6,7 @@ import pymongo
 from box import Box
 from cloudpathlib import AnyPath
 from pymongo.errors import DuplicateKeyError
+from pymongo.operations import UpdateOne
 
 from .artifact import Artifact
 
@@ -179,7 +180,6 @@ class Run:
         if pickled and push:
             raise ValueError("push and pickled cannot be True at the same time.")
 
-        q = {"_id": self.id}
         op = "$push" if push else "$set"
 
         if pickled:
@@ -189,9 +189,11 @@ class Run:
         else:
             update = {op: {key: value}}
 
-        update_result = self.experiment.update_one(q, update)
-        if update_result.modified_count == 0:
-            raise ValueError(f"Updating operation failed: {update}")
-        self._dirty = True
+        q = {"_id": self.id}
+        update_op = UpdateOne(filter=q, update=update, upsert=True)
+
         last_modified = {"$set": {f"{YAMLETT_KEY}.last_modified_at": datetime.now()}}
-        self.experiment.update_one(q, last_modified)
+        last_modified_op = UpdateOne(filter=q, update=last_modified)
+        self.experiment.bulk_write([update_op, last_modified_op])
+
+        self._dirty = True
