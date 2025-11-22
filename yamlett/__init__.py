@@ -1,3 +1,3 @@
-from .tracking import Experiment, Run
+from .tracking import Run
 
-__all__ = ["Experiment", "Run"]
+__all__ = ["Run"]
